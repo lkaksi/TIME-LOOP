@@ -245,8 +245,35 @@
 
     <div class="crt-overlay"></div>
 
+    <div id="intro-screen" class="absolute inset-0 z-[520] flex flex-col items-center justify-center bg-[#050510]">
+        <h1 class="text-8xl font-black italic tracking-tighter mb-8" style="text-shadow: 6px 6px var(--vapor-pink);">TIME LOOP</h1>
+        <button id="intro-start" class="bg-white text-black px-16 py-5 font-black text-2xl hover:bg-[var(--vapor-pink)] hover:text-white transition-all uppercase tracking-widest">START</button>
+    </div>
 
-    <div id="start-screen" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-[#050510]">
+    <div id="mode-select-screen" class="absolute inset-0 z-[510] hidden flex-col items-center justify-center gap-5 bg-[#050510]">
+        <h2 class="text-4xl font-black italic mb-5 tracking-tighter text-[var(--vapor-blue)] uppercase">Select Mode</h2>
+        <button id="btn-story-mode" class="mode-btn px-12 py-4 rounded-full font-bold text-sm tracking-widest uppercase">Story Mode</button>
+        <button id="btn-basic-mode" class="mode-btn px-12 py-4 rounded-full font-bold text-sm tracking-widest uppercase">Basic Mode</button>
+        <button id="btn-custom-mode" class="mode-btn px-12 py-4 rounded-full font-bold text-sm tracking-widest uppercase">Custom Mode</button>
+    </div>
+
+    <div id="story-screen" class="absolute inset-0 z-[500] hidden flex-col items-center justify-center p-8 bg-[#050510]">
+        <h2 class="text-5xl font-black italic mb-6 tracking-tighter text-[var(--vapor-pink)] uppercase">Story Archive</h2>
+        <div id="story-tabs" class="flex gap-3 mb-8"></div>
+        <div class="w-full max-w-3xl border border-white/20 rounded-2xl bg-white/5 p-8">
+            <h3 id="story-map-title" class="text-3xl font-black mb-4 text-[var(--vapor-blue)]">Chapter 1</h3>
+            <p id="story-map-text" class="text-white/80 leading-relaxed min-h-[120px]"></p>
+            <div class="mt-8 flex items-center gap-3">
+                <button id="story-play-btn" class="bg-white text-black px-10 py-3 font-black uppercase tracking-widest disabled:opacity-30" disabled>PLAY</button>
+                <button id="story-back-btn" class="mode-btn px-8 py-3 rounded-full font-bold text-xs tracking-widest uppercase">Back</button>
+            </div>
+            <p id="story-lock-msg" class="mt-4 text-xs font-mono opacity-60"></p>
+        </div>
+    </div>
+
+
+
+    <div id="start-screen" class="absolute inset-0 z-[100] hidden flex-col items-center justify-center p-6 bg-[#050510]">
         <div class="absolute top-10 right-10 flex gap-4">
             
             <button id="open-help" class="text-white/50 hover:text-[var(--vapor-blue)] flex items-center gap-2 group transition-colors">
@@ -710,6 +737,19 @@
         const songListContainer = document.getElementById('song-list-container');
         const playBtn = document.getElementById('play-button');
         const statusMsg = document.getElementById('status-msg');
+        const introScreen = document.getElementById('intro-screen');
+        const introStartBtn = document.getElementById('intro-start');
+        const modeSelectScreen = document.getElementById('mode-select-screen');
+        const storyScreen = document.getElementById('story-screen');
+        const storyTabs = document.getElementById('story-tabs');
+        const storyMapTitle = document.getElementById('story-map-title');
+        const storyMapText = document.getElementById('story-map-text');
+        const storyPlayBtn = document.getElementById('story-play-btn');
+        const storyBackBtn = document.getElementById('story-back-btn');
+        const storyLockMsg = document.getElementById('story-lock-msg');
+        const btnStoryMode = document.getElementById('btn-story-mode');
+        const btnBasicMode = document.getElementById('btn-basic-mode');
+        const btnCustomMode = document.getElementById('btn-custom-mode');
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
 
@@ -737,6 +777,125 @@
         const volumeSlider = document.getElementById('volume-slider');
         const volumeDisplay = document.getElementById('volume-display');
 
+
+        const STORY_CHAPTERS = [
+            {
+                id: 'ch1',
+                title: 'Chapter 1: Boot Sequence',
+                maps: [
+                    { id: 'ch1_map1', title: 'MAP 1 - INITIALIZE', songId: 'official_1', text: '루프 시스템이 처음 활성화된다. 리듬 동기화를 통해 균열을 봉합하라.' }
+                ]
+            },
+            {
+                id: 'ch2',
+                title: 'Chapter 2: Echo Conflict',
+                maps: [
+                    { id: 'ch2_map1', title: 'MAP 2 - VAPORWAVE DRIVE', songId: 'official_2', text: '이전 루프의 잔상이 공격적으로 변한다. PARADOX를 피하며 심층 구역으로 진입하라.' }
+                ]
+            },
+            {
+                id: 'ch3',
+                title: 'Chapter 3: Time Prison',
+                maps: [
+                    { id: 'ch3_map1', title: 'MAP 3 - FINAL RECALL', songId: 'official_1', text: '시간 감옥의 핵심부. 마지막 루프를 돌파해 시스템을 정상화하라.' }
+                ]
+            }
+        ];
+
+        let storyProgress = JSON.parse(localStorage.getItem('timeLoopStoryProgress')) || { unlockedChapter: 1, clearedMaps: [] };
+        let selectedStoryChapter = 0;
+        let selectedStoryMap = null;
+        let currentRunStoryMapId = null;
+
+        function saveStoryProgress() {
+            localStorage.setItem('timeLoopStoryProgress', JSON.stringify(storyProgress));
+        }
+
+        function getAllStoryMaps() {
+            return STORY_CHAPTERS.flatMap(ch => ch.maps);
+        }
+
+        function isStoryMapUnlocked(mapId) {
+            const all = getAllStoryMaps();
+            const idx = all.findIndex(m => m.id === mapId);
+            if (idx <= 0) return true;
+            return storyProgress.clearedMaps.includes(all[idx - 1].id);
+        }
+
+        function unlockNextChapterIfNeeded(chapterIdx) {
+            const chapter = STORY_CHAPTERS[chapterIdx];
+            const clearedAll = chapter.maps.every(m => storyProgress.clearedMaps.includes(m.id));
+            if (clearedAll) {
+                storyProgress.unlockedChapter = Math.max(storyProgress.unlockedChapter, chapterIdx + 2);
+                saveStoryProgress();
+            }
+        }
+
+        function openModeSelect() {
+            introScreen.classList.add('hidden');
+            modeSelectScreen.classList.remove('hidden');
+            modeSelectScreen.classList.add('flex');
+        }
+
+        function openClassicMenu(tab) {
+            modeSelectScreen.classList.add('hidden');
+            storyScreen.classList.add('hidden');
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.remove('hidden');
+            startScreen.classList.add('flex');
+
+            if (tab === 'official') {
+                libraryTab = 'official';
+                document.getElementById('tab-official').classList.add('active');
+                document.getElementById('tab-custom').classList.remove('active');
+            } else if (tab === 'custom') {
+                libraryTab = 'custom';
+                document.getElementById('tab-custom').classList.add('active');
+                document.getElementById('tab-official').classList.remove('active');
+            }
+            renderPlaylist();
+        }
+
+        function renderStoryTabs() {
+            storyTabs.innerHTML = '';
+            STORY_CHAPTERS.forEach((chapter, idx) => {
+                const unlocked = (idx + 1) <= storyProgress.unlockedChapter;
+                const btn = document.createElement('button');
+                btn.className = `mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase ${selectedStoryChapter === idx ? 'active' : ''}`;
+                btn.textContent = `Chapter ${idx + 1}${unlocked ? '' : ' (Locked)'}`;
+                btn.disabled = !unlocked;
+                btn.onclick = () => {
+                    selectedStoryChapter = idx;
+                    selectedStoryMap = chapter.maps[0];
+                    renderStoryTabs();
+                    renderStoryPanel();
+                };
+                storyTabs.appendChild(btn);
+            });
+        }
+
+        function renderStoryPanel() {
+            const chapter = STORY_CHAPTERS[selectedStoryChapter];
+            const map = selectedStoryMap || chapter.maps[0];
+            selectedStoryMap = map;
+            const unlocked = isStoryMapUnlocked(map.id);
+            storyMapTitle.innerText = `${chapter.title} / ${map.title}`;
+            storyMapText.innerText = map.text;
+            storyPlayBtn.disabled = !unlocked;
+            storyLockMsg.innerText = unlocked ? 'PLAY로 스테이지를 시작할 수 있습니다.' : '이전 MAP을 먼저 클리어해야 해금됩니다.';
+        }
+
+        function openStoryMode() {
+            modeSelectScreen.classList.add('hidden');
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.add('hidden');
+            storyScreen.classList.remove('hidden');
+            storyScreen.classList.add('flex');
+            selectedStoryChapter = Math.min(selectedStoryChapter, storyProgress.unlockedChapter - 1);
+            selectedStoryMap = STORY_CHAPTERS[selectedStoryChapter].maps[0];
+            renderStoryTabs();
+            renderStoryPanel();
+        }
         const CONFIG = {
             loopDuration: 8000,
             lanes: 4,
@@ -1419,6 +1578,29 @@ function renderAchievements() {
     renderPlaylist();
     };
 
+    introStartBtn.onclick = openModeSelect;
+    btnStoryMode.onclick = openStoryMode;
+    btnBasicMode.onclick = () => openClassicMenu('official');
+    btnCustomMode.onclick = () => openClassicMenu('custom');
+    storyBackBtn.onclick = openModeSelect;
+    storyPlayBtn.onclick = () => {
+        if (!selectedStoryMap) return;
+        const linkedSong = playlist.find(s => s.id === selectedStoryMap.songId);
+        if (!linkedSong) {
+            storyLockMsg.innerText = `곡 데이터 없음: ${selectedStoryMap.songId}`;
+            return;
+        }
+        selectedSong = linkedSong;
+        currentRunStoryMapId = selectedStoryMap.id;
+        gameMode = 'single';
+        document.getElementById('mode-single').classList.add('active');
+        document.getElementById('mode-endless').classList.remove('active');
+        statusMsg.innerText = `READY: ${selectedSong.name}`;
+        playBtn.disabled = false;
+        storyScreen.classList.add('hidden');
+        document.getElementById('start-screen').classList.add('hidden');
+        playBtn.click();
+    };
 
         function renderPlaylist() {
     songListContainer.innerHTML = '';
@@ -1767,6 +1949,14 @@ if (accVal === 100) unlockAchievement("ACC_100");
 
     // 업적 체크 (3번에서 아래 함수 추가)
     checkAchievementsOnEnd(finalRank, accVal);
+
+    if (currentRunStoryMapId && !storyProgress.clearedMaps.includes(currentRunStoryMapId)) {
+        storyProgress.clearedMaps.push(currentRunStoryMapId);
+        const chapterIdx = STORY_CHAPTERS.findIndex(ch => ch.maps.some(m => m.id === currentRunStoryMapId));
+        if (chapterIdx !== -1) unlockNextChapterIfNeeded(chapterIdx);
+        saveStoryProgress();
+    }
+    currentRunStoryMapId = null;
     }
 
 
