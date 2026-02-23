@@ -1,0 +1,1892 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Time-Loop Rewind: Pro Edition</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            :root {
+                --vapor-pink: #ff00de;
+                --vapor-blue: #00f6ff;
+                --vapor-purple: #7000ff;
+                --vapor-dark: #050510;
+            }
+
+            body {
+                background-color: var(--vapor-dark);
+                color: white;
+                font-family: 'Inter', sans-serif;
+                overflow: hidden;
+                margin: 0;
+                user-select: none;
+            }
+
+            .crt-overlay {
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                            linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+                background-size: 100% 4px, 4px 100%;
+                pointer-events: none;
+                z-index: 1000;
+            }
+
+            .stage-card {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(0, 246, 255, 0.2);
+                transition: all 0.2s ease;
+                cursor: pointer;
+            }
+
+            .stage-card:hover {
+                background: rgba(0, 246, 255, 0.1);
+                border-color: var(--vapor-blue);
+            }
+
+            .stage-card.selected {
+                border-color: var(--vapor-pink);
+                background: rgba(255, 0, 222, 0.15);
+                box-shadow: 0 0 15px rgba(255, 0, 222, 0.4);
+            }
+
+            .combo-text {
+                font-size: 6rem;
+                font-weight: 900;
+                font-style: italic;
+                background: linear-gradient(to bottom, #fff, var(--vapor-blue));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                filter: drop-shadow(0 0 15px var(--vapor-blue));
+            }
+
+            .judge-popup {
+                animation: judge-anim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            }
+
+            @keyframes judge-anim {
+                0% { transform: scale(0.3); opacity: 0; }
+                40% { transform: scale(1.3); opacity: 1; }
+                100% { transform: scale(1); opacity: 0; transform: translateY(-80px); }
+            }
+
+            .mode-btn {
+                border: 1px solid rgba(255,255,255,0.1);
+                transition: all 0.3s;
+            }
+            .mode-btn.active {
+                background: white;
+                color: black;
+                box-shadow: 0 0 20px white;
+            }
+
+            .key-hint {
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.05);
+                width: 50px;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 1rem;
+                border-radius: 4px;
+            }
+
+            /* Achievements list item */
+.achv-row {
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.achv-row:hover { background: rgba(255,255,255,0.04); }
+.achv-row.selected { background: rgba(0,246,255,0.08); border-left: 3px solid var(--vapor-blue); }
+
+.achv-badge {
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.25);
+  opacity: 0.85;
+}
+
+.achv-mini {
+  font-family: monospace;
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+.achv-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.25);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 18px;
+}
+
+.achv-locked {
+  opacity: 0.45;
+  filter: saturate(0.7);
+}
+
+.achv-pill {
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  opacity: 0.75;
+}
+
+
+            .settings-input {
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: white;
+                padding: 8px;
+                width: 80px;
+                text-align: center;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+
+            input[type=range] {
+                accent-color: var(--vapor-blue);
+            }
+
+            /* Help Modal Specific */
+            .help-image-box {
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                padding: 15px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 120px;
+            }
+
+            /* Health Bar Styles */
+            #health-container {
+                position: absolute;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 300px;
+                height: 10px;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 5px;
+                overflow: hidden;
+                display: none;
+            }
+            #health-bar {
+                height: 100%;
+                width: 100%;
+                background: linear-gradient(90deg, var(--vapor-pink), var(--vapor-blue));
+                transition: width 0.2s ease-out;
+            }
+
+            #game-canvas {
+                transition: filter 0.05s linear;
+            }
+
+            /* Glitch Animation */
+            @keyframes glitch-flash {
+                0% { filter: hue-rotate(0deg) contrast(100%) brightness(100%); transform: translateX(0); }
+                20% { filter: hue-rotate(90deg) contrast(200%) brightness(150%); transform: translateX(5px); }
+                40% { filter: hue-rotate(-90deg) contrast(150%) brightness(80%); transform: translateX(-5px); }
+                60% { filter: hue-rotate(180deg) contrast(300%) brightness(200%); transform: translateX(10px); }
+                80% { filter: hue-rotate(0deg) contrast(150%) brightness(120%); transform: translateX(-10px); }
+                100% { filter: hue-rotate(0deg) contrast(100%) brightness(100%); transform: translateX(0); }
+            }
+            .glitch-effect {
+                animation: glitch-flash 0.1s infinite;
+            }
+
+            /* Result Animation */
+    @keyframes pop-in {
+    0%   { transform: scale(0.2); opacity: 0; }
+    55%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes slam {
+    0%   { transform: scale(0.2) rotate(-6deg); opacity: 0; filter: blur(6px); }
+    55%  { transform: scale(1.35) rotate(2deg); opacity: 1; filter: blur(0); }
+    75%  { transform: scale(0.95) rotate(-1deg); }
+    100% { transform: scale(1) rotate(0deg); }
+    }
+    @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-7px); }
+    80% { transform: translateX(7px); }
+    }
+
+    .result-pop { animation: pop-in 0.45s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+    .rank-slam  { animation: slam 0.65s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+    .screen-shake { animation: shake 0.22s ease-in-out 1; }
+
+        </style>
+    </head>
+    <body>
+
+    <div class="crt-overlay"></div>
+
+
+    <div id="start-screen" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-[#050510]">
+        <div class="absolute top-10 right-10 flex gap-4">
+            
+            <button id="open-help" class="text-white/50 hover:text-[var(--vapor-blue)] flex items-center gap-2 group transition-colors">
+                <span class="text-[10px] font-mono tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity">How to Play</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </button>
+
+            <button id="open-achievements" class="text-white/50 hover:text-[var(--vapor-pink)] flex items-center gap-2 group transition-colors">
+        <span class="text-[10px] font-mono tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity">
+            Achievements
+        </span>
+        <!-- 트로피 아이콘 -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 21h8"/>
+            <path d="M12 17v4"/>
+            <path d="M7 4h10"/>
+            <path d="M17 4v5a5 5 0 0 1-10 0V4"/>
+            <path d="M5 7h2"/>
+            <path d="M17 7h2"/>
+        </svg>
+    </button>
+
+
+            <button id="open-settings" class="text-white/50 hover:text-white flex items-center gap-2 group transition-colors">
+                <span class="text-[10px] font-mono tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity">System Config</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+
+        <div class="mb-8 text-center">
+            <h1 class="text-7xl font-black italic tracking-tighter" style="text-shadow: 4px 4px var(--vapor-pink);">TIME-LOOP</h1>
+            <p class="text-[var(--vapor-blue)] font-mono text-sm tracking-[0.5em]">PRO RHYTHM SYSTEM</p>
+        </div>
+        
+        <div class="flex gap-4 mb-10">
+            <button id="mode-single" class="mode-btn active px-8 py-3 rounded-full font-bold text-xs tracking-widest uppercase">Single Track</button>
+            <button id="mode-endless" class="mode-btn px-8 py-3 rounded-full font-bold text-xs tracking-widest uppercase">Endless (Scaling)</button>
+        </div>
+
+        <div class="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="file-drop-zone" class="border border-dashed border-white/20 rounded-xl p-6 text-center hover:border-[var(--vapor-blue)] transition-colors">
+                <input type="file" id="song-upload" accept="audio/mp3, audio/mpeg" class="hidden">
+                <label for="song-upload" class="cursor-pointer block">
+                    <div class="text-[var(--vapor-blue)] text-3xl mb-2">＋</div>
+                    <p class="text-[10px] font-mono opacity-50 uppercase">Import Custom MP3</p>
+                </label>
+            </div>
+
+    <div class="flex gap-2 mb-2">
+    <button id="tab-official" class="mode-btn active px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Official</button>
+    <button id="tab-custom" class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Custom</button>
+    </div>
+
+
+            <div id="song-list-container" class="space-y-2 overflow-y-auto max-h-[300px] pr-2">
+                <!-- Playlist items -->
+            </div>
+        </div>
+
+        <div class="mt-10 flex flex-col items-center">
+            <button id="play-button" class="bg-white text-black px-20 py-5 font-black text-2xl hover:bg-[var(--vapor-pink)] hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed uppercase" disabled>
+                Initiate Link
+            </button>
+            <p id="status-msg" class="mt-4 text-[10px] font-mono text-white/40 uppercase tracking-[0.3em]">Select a protocol to begin</p>
+        </div>
+    </div>
+
+
+    <div id="help-modal" class="absolute inset-0 z-[400] hidden flex items-center justify-center bg-[#050510]/95 backdrop-blur-2xl">
+        <div class="bg-white/5 border border-white/10 p-10 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-4xl font-black italic mb-2 tracking-tighter text-[var(--vapor-blue)] uppercase">Protocol Guide</h2>
+            <p class="text-xs font-mono opacity-40 uppercase tracking-widest mb-8 border-b border-white/10 pb-4">Understanding the Temporal Sync Paradox</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            
+                <div class="space-y-4">
+                    <div class="help-image-box">
+                        <!-- Blue Note SVG -->
+                        <svg width="120" height="60" viewBox="0 0 120 60">
+                            <rect x="15" y="20" width="90" height="20" fill="#00f6ff" rx="4">
+                                <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite" />
+                            </rect>
+                            <rect x="25" y="27" width="70" height="6" fill="white" opacity="0.8" />
+                            <line x1="0" y1="50" x2="120" y2="50" stroke="#00f6ff" stroke-width="2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-[var(--vapor-blue)] mb-2">01. 기본 노트</h3>
+                        <p class="text-sm text-white/70 leading-relaxed">화면 아래로 떨어지는 <span class="text-[var(--vapor-blue)] font-bold">파란색 노트</span>가 판정선에 닿을 때 키를 누르세요. 정확할수록 더 높은 점수와 콤보를 획득합니다.</p>
+                    </div>
+                </div>
+
+            
+                <div class="space-y-4">
+                    <div class="help-image-box">
+                        <!-- Loop Symbol SVG -->
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ff00de" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+                            <polyline points="21 3 21 8 16 8"/>
+                            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="4s" repeatCount="indefinite" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-[var(--vapor-pink)] mb-2">02. 타임 루프</h3>
+                        <p class="text-sm text-white/70 leading-relaxed">일정 시간마다 시간이 되감깁니다. 루프가 반복될수록 게임의 속도가 빨라지거나 난이도가 상승하며, 당신의 과거가 현재를 방해하기 시작합니다.</p>
+                    </div>
+                </div>
+
+            
+                <div class="space-y-4">
+                    <div class="help-image-box">
+                        <!-- Ghost Note SVG -->
+                        <svg width="120" height="60" viewBox="0 0 120 60">
+                            <rect x="25" y="20" width="70" height="15" fill="none" stroke="#ff00de" stroke-width="1" />
+                            <rect x="25" y="20" width="70" height="15" fill="#ff00de" opacity="0.3">
+                                <animate attributeName="opacity" values="0.1;0.5;0.1" dur="0.5s" repeatCount="indefinite" />
+                            </rect>
+                            <text x="60" y="32" font-family="monospace" font-size="8" fill="#ff00de" text-anchor="middle" font-weight="bold">PARADOX</text>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">03. 고스트 노트</h3>
+                        <p class="text-sm text-white/70 leading-relaxed">이전 루프에서 <span class="text-[var(--vapor-blue)] font-bold">당신이 눌렀던던 위치</span>에 <span class="text-[var(--vapor-pink)] font-bold">핑크색 잔상</span>이 나타납니다. 누를 경우 큰 감점을 당합니다.</p>
+                    </div>
+                </div>
+
+                
+                <div class="space-y-4">
+                    <div class="help-image-box flex-col gap-2">
+                        <div class="text-2xl font-black italic text-white">S RANK</div>
+                        <div class="text-[10px] font-mono text-[var(--vapor-blue)]">COMBO BONUS +++</div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">04. 마스터리</h3>
+                        <p class="text-sm text-white/70 leading-relaxed">콤보가 길어질수록 추가 보너스 점수를 얻습니다. 고스트 노트를 피하면서 정확하게 동기화하여 가장 높은 랭크인 <span class="text-[var(--vapor-yellow)] font-bold"> SSS </span>를 달성해 보세요.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+    <div class="help-image-box flex-col gap-2">
+        <div class="text-3xl font-black italic text-[var(--vapor-pink)]">
+        ∞
+        </div>
+        <div class="text-[10px] font-mono tracking-widest opacity-60">
+        ENDLESS PROTOCOL
+        </div>
+    </div>
+
+    <div>
+        <h3 class="text-lg font-bold text-[var(--vapor-pink)] mb-2">
+        06. 엔들리스 루프
+        </h3>
+        <p class="text-sm text-white/70 leading-relaxed">
+        엔들리스 모드에서는 트랙이 끝나지 않습니다.<br>
+        루프가 반복될수록 <span class="text-[var(--vapor-pink)] font-bold">노트 속도</span>가 점점 증가하며,
+        실수는 <span class="text-[var(--vapor-pink)] font-bold">체력</span>을 소모합니다.<br><br>
+        체력이 0이 되는 순간 동기화는 강제로 종료됩니다.<br>
+        이 모드에서는 랭크 대신, 당신이
+        <span class="text-white font-bold">얼마나 오래 시간을 견뎠는지</span>가 기록됩니다.
+        </p>
+    </div>
+    </div>
+    <div class="space-y-4">
+    <div class="help-image-box flex-col gap-2">
+        <div class="text-3xl font-black italic text-[var(--vapor-blue)]">
+        S
+        </div>
+        <div class="text-[10px] font-mono tracking-widest opacity-60">
+        SINGLE TRACK
+        </div>
+    </div>
+
+    <div>
+        <h3 class="text-lg font-bold text-[var(--vapor-blue)] mb-2">
+        07. 싱글 트랙 동기화
+        </h3>
+        <p class="text-sm text-white/70 leading-relaxed">
+        싱글 모드는 하나의 트랙을 끝까지 동기화하는
+        <span class="text-[var(--vapor-blue)] font-bold">정식 평가 프로토콜</span>입니다.<br><br>
+        정확도, 콤보, 실수를 종합해
+        <span class="text-[var(--vapor-blue)] font-bold">F부터 SSS까지</span>
+        랭크가 부여됩니다.<br>
+        </p>
+    </div>
+    </div>
+
+
+            </div>
+
+            <button id="close-help" class="mt-12 w-full border border-white/20 text-white py-4 font-bold uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all">Understood.</button>
+        </div>
+    </div>
+
+
+    <div id="settings-modal" class="absolute inset-0 z-[300] hidden flex items-center justify-center bg-[#050510]/95 backdrop-blur-xl">
+        <div class="bg-white/5 border border-white/10 p-10 rounded-2xl w-full max-w-lg">
+            <h2 class="text-3xl font-black italic mb-8 tracking-tighter text-[var(--vapor-blue)] uppercase">System Configuration</h2>
+            
+            <div class="space-y-8">
+                <div>
+                    <label class="block text-[10px] font-mono opacity-50 uppercase mb-3 tracking-widest">Master Volume</label>
+                    <div class="flex items-center gap-4">
+                        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.7" class="flex-1">
+                        <span id="volume-display" class="font-mono text-sm w-8">70%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-mono opacity-50 uppercase mb-3 tracking-widest">Key Bindings (Lanes 1-4)</label>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="flex flex-col items-center gap-2">
+                            <input type="text" maxlength="1" id="key-lane-0" class="settings-input rounded" readonly value="D">
+                        </div>
+                        <div class="flex flex-col items-center gap-2">
+                            <input type="text" maxlength="1" id="key-lane-1" class="settings-input rounded" readonly value="F">
+                        </div>
+                        <div class="flex flex-col items-center gap-2">
+                            <input type="text" maxlength="1" id="key-lane-2" class="settings-input rounded" readonly value="J">
+                        </div>
+                        <div class="flex flex-col items-center gap-2">
+                            <input type="text" maxlength="1" id="key-lane-3" class="settings-input rounded" readonly value="K">
+                        </div>
+                    </div>
+                    <p class="mt-2 text-[8px] text-white/30 italic uppercase">Click a box and press a key to rebind</p>
+                </div>
+            </div>
+
+            <button id="close-settings" class="mt-10 w-full bg-white text-black py-4 font-bold uppercase tracking-widest text-xs hover:bg-[var(--vapor-blue)] transition-colors">Apply and Synchronize</button>
+        </div>
+    </div>
+
+    <div id="achievement-modal"
+        class="absolute inset-0 z-[400] hidden flex items-center justify-center bg-[#050510]/95 backdrop-blur-2xl">
+
+        <div class="bg-white/5 border border-white/10 p-10 rounded-2xl
+                    w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+
+            <h2 class="text-4xl font-black italic mb-2 tracking-tighter
+                    text-[var(--vapor-pink)] uppercase">
+                Achievements
+            </h2>
+
+            <p class="text-xs font-mono opacity-40 uppercase tracking-widest mb-8
+                    border-b border-white/10 pb-4">
+                Memory Records
+            </p>
+
+            <div class="flex flex-col gap-6">
+<!-- Detail Overlay (popup) -->
+<div id="achv-detail-overlay"
+     class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+  <div class="w-[min(760px,92vw)] rounded-2xl border border-white/10 bg-[#050510]/95 p-6 shadow-2xl">
+    <div class="flex items-center justify-between">
+      <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Achievement Details</div>
+      <button id="achv-detail-close"
+              class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">
+        Close
+      </button>
+    </div>
+
+    <div id="achv-detail-popup-content" class="mt-4">
+      <!-- JS로 채움 -->
+    </div>
+  </div>
+</div>
+
+  <!-- 상단: 요약/진행률 -->
+  <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">Completion</div>
+        <div class="text-2xl font-black">
+          <span id="achv-unlocked-count">0</span>/<span id="achv-total-count">0</span>
+          <span class="text-sm font-mono opacity-60 ml-2" id="achv-percent">0%</span>
+        </div>
+        <div class="text-[10px] font-mono opacity-50 mt-1" id="achv-subline">
+          Your memory records, indexed.
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="achv-filter-all" class="mode-btn active px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">All</button>
+        <button id="achv-filter-unlocked" class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Unlocked</button>
+        <button id="achv-filter-locked" class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Locked</button>
+
+        <select id="achv-sort" class="bg-black/20 border border-white/15 rounded-xl px-3 py-2 text-[10px] font-mono tracking-widest uppercase">
+          <option value="recent">Recent</option>
+          <option value="name">Name</option>
+          <option value="rarity">Rarity</option>
+          <option value="progress">Progress</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <div class="h-2 rounded-full bg-white/10 overflow-hidden border border-white/10">
+        <div id="achv-progress-bar" class="h-full w-0 bg-gradient-to-r from-[var(--vapor-blue)] to-[var(--vapor-pink)] transition-all duration-300"></div>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col md:flex-row gap-3">
+      <input id="achv-search" type="text"
+             class="flex-1 bg-black/20 border border-white/15 rounded-xl px-4 py-3 text-sm outline-none"
+             placeholder="Search achievements (name / description)..." />
+      <button id="achv-reset" class="mode-btn px-5 py-3 rounded-xl font-bold text-[10px] tracking-widest uppercase">
+        Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- 본문: 리스트 + 상세 패널 -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- 리스트 -->
+    <div class="lg:col-span-2 rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Archive</div>
+        <div class="text-[10px] font-mono opacity-40" id="achv-list-hint">
+          Click an item to view details.
+        </div>
+      </div>
+
+      <div id="achievement-list"
+           class="max-h-[52vh] overflow-y-auto divide-y divide-white/10">
+        <!-- JS로 채움 -->
+      </div>
+    </div>
+
+    <!-- 상세 -->
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Details</div>
+
+      <div id="achv-detail-empty" class="mt-6 opacity-60 text-sm leading-relaxed">
+        Select an achievement from the archive to inspect its record.
+      </div>
+
+      <div id="achv-detail" class="hidden mt-4">
+        <div class="flex items-start gap-3">
+          <div id="achv-detail-icon" class="w-12 h-12 rounded-xl border border-white/10 bg-black/30 flex items-center justify-center text-xl">
+            🏆
+          </div>
+          <div class="flex-1">
+            <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase" id="achv-detail-state">Locked</div>
+            <div class="text-xl font-black mt-1" id="achv-detail-name">—</div>
+            <div class="text-sm opacity-75 mt-2 leading-relaxed" id="achv-detail-desc">—</div>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-black/20 p-3">
+            <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">Rarity</div>
+            <div class="text-lg font-black mt-1" id="achv-detail-rarity">—</div>
+            <div class="text-[10px] font-mono opacity-40 mt-1" id="achv-detail-rarity-sub">—</div>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-black/20 p-3">
+            <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">Unlocked At</div>
+            <div class="text-sm font-mono mt-2 opacity-80" id="achv-detail-time">—</div>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+          <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">How to unlock</div>
+          <div class="text-sm mt-2 opacity-80 leading-relaxed" id="achv-detail-how">—</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+            <button id="close-achievements"
+                    class="mt-12 w-full border border-white/20 text-white py-4
+                        font-bold uppercase tracking-widest text-xs
+                        hover:bg-white hover:text-black transition-all">
+                Close
+            </button>
+        </div>
+    </div>
+
+
+
+    <div id="result-screen" class="absolute inset-0 z-[200] flex flex-col items-center justify-center hidden bg-[#050510]/95 backdrop-blur-md">
+        <h2 class="text-3xl font-black italic mb-2 tracking-tighter text-[var(--vapor-blue)] uppercase">Synchronization Result</h2>
+        <div id="result-rank-container" class="flex flex-col items-center">
+            <div class="text-[10rem] font-black italic leading-none" id="result-rank" style="text-shadow: 10px 10px var(--vapor-pink);">S</div>
+        </div>
+        <div class="grid grid-cols-3 gap-12 text-center mb-10 mt-6">
+            <div>
+                <div class="text-[10px] font-mono opacity-50 uppercase tracking-widest">Score</div>
+                <div class="text-4xl font-black" id="result-score">000,000</div>
+            </div>
+            <div>
+                <div class="text-[10px] font-mono opacity-50 uppercase tracking-widest">Accuracy</div>
+                <div class="text-4xl font-black" id="result-acc">0.0%</div>
+            </div>
+            <div>
+                <div class="text-[10px] font-mono opacity-50 uppercase tracking-widest">Max Combo</div>
+                <div class="text-4xl font-black" id="result-combo">000</div>
+            </div>
+        </div>
+        <button onclick="location.reload()" class="bg-[var(--vapor-blue)] text-black px-12 py-4 font-black hover:bg-white transition-colors uppercase tracking-widest">Return to Menu</button>
+    </div>
+
+
+    <div id="game-ui" class="absolute inset-0 z-10 pointer-events-none opacity-0 transition-opacity duration-1000">
+        <div class="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+            <div id="stage-percent" class="text-3xl font-black italic text-white leading-none">0%</div>
+            <div class="text-[8px] font-mono tracking-[0.4em] text-[var(--vapor-blue)] uppercase opacity-80">Sync Progress</div>
+            <!-- Health Bar -->
+            <div id="health-container">
+                <div id="health-bar"></div>
+            </div>
+        </div>
+
+        <div class="absolute top-10 left-10 border-l-4 border-[var(--vapor-pink)] pl-4">
+            <div id="current-track-name" class="text-[var(--vapor-blue)] font-bold text-xs uppercase tracking-widest">LOADING...</div>
+            <div class="text-4xl font-black italic">LOOP <span id="loop-count" class="text-[var(--vapor-pink)]">1</span></div>
+            <div id="tutorial-msg" class="mt-2 text-sm font-bold text-white/60 animate-pulse uppercase">Hit the Blue Notes / Avoid the Pink Echoes</div>
+        </div>
+
+        <div class="absolute top-10 right-10 text-right">
+            <div class="text-5xl font-black font-mono tracking-tighter" id="score-val">000000</div>
+            <div id="difficulty-badge" class="mt-1 text-[10px] font-mono bg-white/10 px-2 py-1 inline-block hidden">SPEED x1.0</div>
+        </div>
+        
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <div id="judge-container" class="h-24"></div>
+            <div id="combo-container" class="mt-4 text-center hidden">
+                <div id="combo-val" class="combo-text">0</div>
+                <div class="text-[var(--vapor-blue)] font-black tracking-[0.5em] text-sm -mt-4">COMBO</div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-10 left-0 right-0 flex flex-col items-center">
+            <div class="flex gap-[calc(22vw-50px)] mb-8 opacity-40" id="key-hints-container">
+                <div class="key-hint" id="hint-0">D</div>
+                <div class="key-hint" id="hint-1">F</div>
+                <div class="key-hint" id="hint-2">J</div>
+                <div class="key-hint" id="hint-3">K</div>
+            </div>
+            <div class="w-full max-w-4xl px-10">
+                <div class="h-1 bg-white/10 w-full rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-[var(--vapor-blue)] to-[var(--vapor-pink)] w-0 transition-all duration-100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="game-canvas" class="block"></canvas>
+
+    <script>
+        const songUpload = document.getElementById('song-upload');
+        const songListContainer = document.getElementById('song-list-container');
+        const playBtn = document.getElementById('play-button');
+        const statusMsg = document.getElementById('status-msg');
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        const settingsModal = document.getElementById('settings-modal');
+        const openSettingsBtn = document.getElementById('open-settings');
+        const closeSettingsBtn = document.getElementById('close-settings');
+        
+        const helpModal = document.getElementById('help-modal');
+        const openHelpBtn = document.getElementById('open-help');
+        const closeHelpBtn = document.getElementById('close-help');
+        
+        const achievementModal = document.getElementById('achievement-modal');
+        const openAchievementBtn = document.getElementById('open-achievements');
+        const closeAchievementBtn = document.getElementById('close-achievements');
+    
+        openAchievementBtn.onclick = () => {
+        renderAchievements();
+        achievementModal.classList.remove('hidden');
+    };
+
+    closeAchievementBtn.onclick = () => {
+        achievementModal.classList.add('hidden');
+    };
+
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeDisplay = document.getElementById('volume-display');
+
+        const CONFIG = {
+            loopDuration: 8000,
+            lanes: 4,
+            keyCodes: ['KeyD', 'KeyF', 'KeyJ', 'KeyK'],
+            keyNames: ['D', 'F', 'J', 'K'],
+            judgeWindow: 140, 
+            noteBaseSpeed: 0.8,
+            perfectY: 0.85,
+            masterVolume: 0.7
+        };
+
+        let gameMode = 'single'; 
+        let currentSpeed = CONFIG.noteBaseSpeed;
+        
+        let playlist = JSON.parse(localStorage.getItem('timeLoopPlaylist')) || [
+    { id: 'official_1', name: "INITIALIZE", bpm: 128, isTutorial: true, source: "official", highScore: 0, maxCombo: 0 },
+    { id: 'official_2', name: "VAPORWAVE DRIVE", bpm: 110, isTutorial: true, source: "official", highScore: 0, maxCombo: 0 }
+    ];
+
+    // ✅ Electron exe 환경: songs 폴더 자동 로드
+if (window.songAPI) {
+  const autoSongs = window.songAPI.loadSongsFromFolder();
+
+  autoSongs.forEach(s => {
+    playlist.push({
+      id: "auto_" + s.path,
+      name: s.name,
+      bpm: 124,               // 나중에 json으로 분리 가능
+      source: "official",
+      filePath: s.path,      // ⭐ Electron 전용 핵심
+      highScore: 0,
+      maxCombo: 0
+    });
+  });
+}
+
+
+        const savedSettings = JSON.parse(localStorage.getItem('timeLoopSettings'));
+        if (savedSettings) {
+            CONFIG.masterVolume = savedSettings.volume ?? 0.7;
+            CONFIG.keyCodes = savedSettings.keyCodes ?? ['KeyD', 'KeyF', 'KeyJ', 'KeyK'];
+            CONFIG.keyNames = savedSettings.keyNames ?? ['D', 'F', 'J', 'K'];
+        }
+
+        let selectedSong = null;
+        let audioCtx, audioBuffer, audioSource, gainNode;
+        let startTime = 0, isPlaying = false;
+        let score = 0, combo = 0, maxCombo = 0, loopCount = 1;
+        let notes = [], pastLoopNotes = [], currentLoopNotes = [];
+        let lastBeat = 0, laneFeedback = [0, 0, 0, 0];
+        let particles = [];
+        
+        // ---------------------------
+    // Achievements (Local, Steam-ready)
+    // ---------------------------
+    const ACHIEVEMENTS = [
+  {
+    id: "FIRST_LOOP",
+    name: "FIRST LOOP",
+    desc: "첫 루프에 진입했다.",
+    icon: "⟲",
+    rarity: 1,
+    how: "플레이 중 루프가 2회차에 진입하면 자동 해금."
+  },
+  {
+    id: "PARADOX_FREE",
+    name: "PARADOX FREE",
+    desc: "PARADOX 0회로 클리어했다.",
+    icon: "⛔",
+    rarity: 4,
+    how: "싱글 모드 클리어 시 PARADOX 발생 횟수(stats.paradox)가 0이면 해금."
+  },
+  {
+    id: "PERFECT_RECALL",
+    name: "PERFECT RECALL",
+    desc: "MISS 0회로 클리어.",
+    icon: "🎯",
+    rarity: 4,
+    how: "싱글 모드 클리어 시 MISS 횟수(stats.miss)가 0이면 해금."
+  },
+  {
+    id: "SSS_SYNC",
+    name: "SSS SYNCHRONIZED",
+    desc: "SSS 랭크 달성.",
+    icon: "✦",
+    rarity: 5,
+    how: "싱글 모드 결과 랭크가 SSS이면 해금."
+  },
+  {
+    id: "FIRST_SYNC",
+    name: "FIRST SYNC",
+    desc: "처음으로 트랙을 클리어했다.",
+    icon: "✓",
+    rarity: 1,
+    how: "싱글 모드를 끝까지 완료(결과 화면 진입)하면 해금."
+  },
+
+  {
+    id: "LOOP_5",
+    name: "TIME REPEATER",
+    desc: "총 5번의 루프를 경험했다.",
+    icon: "⑤",
+    rarity: 2,
+    how: "플레이 중 loopCount가 5에 도달하면 해금."
+  },
+  {
+    id: "LOOP_20",
+    name: "TIME ADDICT",
+    desc: "총 20번의 루프를 경험했다.",
+    icon: "⑳",
+    rarity: 4,
+    how: "플레이 중 loopCount가 20에 도달하면 해금."
+  },
+
+  {
+    id: "ACC_90",
+    name: "CLEAN SYNC",
+    desc: "정확도 90% 이상으로 클리어.",
+    icon: "90",
+    rarity: 2,
+    how: "싱글 모드 클리어 시 정확도(accVal)가 90 이상이면 해금."
+  },
+  {
+    id: "ACC_98",
+    name: "NEAR PERFECT",
+    desc: "정확도 98% 이상으로 클리어.",
+    icon: "98",
+    rarity: 4,
+    how: "싱글 모드 클리어 시 정확도(accVal)가 98 이상이면 해금."
+  },
+  {
+    id: "ACC_100",
+    name: "FLAWLESS",
+    desc: "100% 정확도로 클리어.",
+    icon: "∞",
+    rarity: 5,
+    how: "싱글 모드 클리어 시 정확도(accVal)가 100이면 해금."
+  },
+
+  {
+    id: "ENDLESS_3",
+    name: "STILL LOOPING",
+    desc: "엔들리스 3루프 생존.",
+    icon: "⏳",
+    rarity: 2,
+    how: "엔들리스 모드에서 loopCount가 3에 도달하면 해금."
+  },
+  {
+    id: "ENDLESS_10",
+    name: "TIME PRISONER",
+    desc: "엔들리스 10루프 생존.",
+    icon: "⛓",
+    rarity: 3,
+    how: "엔들리스 모드에서 loopCount가 10에 도달하면 해금."
+  },
+  {
+    id: "ENDLESS_25",
+    name: "ETERNITY",
+    desc: "엔들리스 25루프 생존.",
+    icon: "♾",
+    rarity: 5,
+    how: "엔들리스 모드에서 loopCount가 25에 도달하면 해금."
+  },
+
+  {
+    id: "FIRST_CUSTOM",
+    name: "PERSONAL TASTE",
+    desc: "커스텀 곡으로 플레이했다.",
+    icon: "🎧",
+    rarity: 2,
+    how: "선택한 곡 source가 custom일 때 플레이를 종료하면 해금."
+  },
+  {
+    id: "FIRST_ENDLESS",
+    name: "NO ESCAPE",
+    desc: "엔들리스 모드를 처음 플레이했다.",
+    icon: "∞",
+    rarity: 1,
+    how: "엔들리스 모드로 플레이를 시작하거나 종료하면 해금."
+  }
+];
+
+
+    let unlocked = JSON.parse(localStorage.getItem("timeLoopAchievements")) || {};
+
+    function saveAchievements() {
+    localStorage.setItem("timeLoopAchievements", JSON.stringify(unlocked));
+    }
+
+    // Steam 연동할 때는 이 함수 안만 바꾸면 됨
+    function unlockAchievement(id) {
+    if (unlocked[id]) return;
+    unlocked[id] = { t: Date.now() };
+    saveAchievements();
+    showAchievementToast(id);
+    }
+
+    function showAchievementToast(id) {
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if (!a) return;
+
+  const div = document.createElement("div");
+
+  // 위치를 inset으로 강제 고정 (top=22px, left=50%)
+  div.style.position = "fixed";
+  div.style.inset = "22px auto auto 50%"; // top, right, bottom, left
+  div.style.transform = "translateX(-50%)";
+  div.style.zIndex = 99999;
+
+  div.style.padding = "14px 18px";
+  div.style.background = "rgba(255,255,255,0.08)";
+  div.style.border = "1px solid rgba(255,0,222,0.35)";
+  div.style.backdropFilter = "blur(12px)";
+  div.style.borderRadius = "16px";
+  div.style.fontFamily = "monospace";
+  div.style.maxWidth = "420px";
+  div.style.textAlign = "center";
+  div.style.boxShadow = "0 0 25px rgba(255,0,222,0.25)";
+
+  div.innerHTML = `
+    <div style="font-size:10px; letter-spacing:0.35em; color: rgba(255,0,222,0.9); text-transform: uppercase;">
+      ACHIEVEMENT UNLOCKED
+    </div>
+    <div style="margin-top:6px; font-size:18px; font-weight:900;">${a.name}</div>
+    <div style="margin-top:4px; font-size:12px; opacity:0.75;">${a.desc}</div>
+  `;
+
+  document.body.appendChild(div);
+
+  div.animate(
+    [
+      { transform: "translateX(-50%) translateY(-20px)", opacity: 0 },
+      { transform: "translateX(-50%) translateY(0)", opacity: 1 }
+    ],
+    { duration: 260, easing: "cubic-bezier(0.175,0.885,0.32,1.275)" }
+  );
+
+  setTimeout(() => {
+    div.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 320, easing: "ease" })
+      .onfinish = () => div.remove();
+  }, 2000);
+}
+
+
+
+    let achvUI = {
+  filter: "all",      // all | unlocked | locked
+  sort: "recent",     // recent | name | rarity | progress
+  search: "",
+  selectedId: null,
+};
+
+function rarityLabel(r) {
+  if (r >= 5) return { t: "LEGENDARY", sub: "Very rare record", color: "rgba(255,0,222,0.9)" };
+  if (r === 4) return { t: "EPIC", sub: "Rare record", color: "rgba(112,0,255,0.9)" };
+  if (r === 3) return { t: "RARE", sub: "Uncommon record", color: "rgba(0,246,255,0.9)" };
+  if (r === 2) return { t: "UNCOMMON", sub: "Above average", color: "rgba(255,255,255,0.75)" };
+  return { t: "COMMON", sub: "Standard record", color: "rgba(255,255,255,0.55)" };
+}
+
+function bindAchievementUIOnce() {
+  const btnAll = document.getElementById("achv-filter-all");
+  const btnU = document.getElementById("achv-filter-unlocked");
+  const btnL = document.getElementById("achv-filter-locked");
+  const sortSel = document.getElementById("achv-sort");
+  const search = document.getElementById("achv-search");
+  const reset = document.getElementById("achv-reset");
+
+  if (!btnAll || btnAll.dataset.bound === "1") return;
+  btnAll.dataset.bound = "1";
+
+  function setActiveFilter(next) {
+    achvUI.filter = next;
+    btnAll.classList.toggle("active", next === "all");
+    btnU.classList.toggle("active", next === "unlocked");
+    btnL.classList.toggle("active", next === "locked");
+    renderAchievements();
+  }
+
+  btnAll.onclick = () => setActiveFilter("all");
+  btnU.onclick = () => setActiveFilter("unlocked");
+  btnL.onclick = () => setActiveFilter("locked");
+
+  sortSel.onchange = () => { achvUI.sort = sortSel.value; renderAchievements(); };
+  search.oninput = () => { achvUI.search = search.value.trim().toLowerCase(); renderAchievements(); };
+
+  reset.onclick = () => {
+    achvUI.filter = "all";
+    achvUI.sort = "recent";
+    achvUI.search = "";
+    achvUI.selectedId = null;
+
+    btnAll.classList.add("active");
+    btnU.classList.remove("active");
+    btnL.classList.remove("active");
+
+    sortSel.value = "recent";
+    search.value = "";
+    renderAchievements();
+  };
+}
+
+function setAchievementDetail(a) {
+  const empty = document.getElementById("achv-detail-empty");
+  const box = document.getElementById("achv-detail");
+  const iconEl = document.getElementById("achv-detail-icon");
+  const stateEl = document.getElementById("achv-detail-state");
+  const nameEl = document.getElementById("achv-detail-name");
+  const descEl = document.getElementById("achv-detail-desc");
+  const rarityEl = document.getElementById("achv-detail-rarity");
+  const raritySubEl = document.getElementById("achv-detail-rarity-sub");
+  const timeEl = document.getElementById("achv-detail-time");
+  const howEl = document.getElementById("achv-detail-how");
+
+  if (!a) {
+    empty.classList.remove("hidden");
+    box.classList.add("hidden");
+    return;
+  }
+
+  const ud = unlocked[a.id];
+  const isUnlocked = !!ud;
+
+  const rr = rarityLabel(a.rarity || 1);
+
+  empty.classList.add("hidden");
+  box.classList.remove("hidden");
+
+  iconEl.textContent = a.icon || "🏆";
+  stateEl.textContent = isUnlocked ? "Unlocked" : "Locked";
+  stateEl.style.color = isUnlocked ? "var(--vapor-blue)" : "rgba(255,255,255,0.6)";
+
+  nameEl.textContent = a.name;
+  descEl.textContent = a.desc;
+
+  rarityEl.textContent = rr.t;
+  rarityEl.style.color = rr.color;
+  raritySubEl.textContent = rr.sub;
+
+  timeEl.textContent = isUnlocked ? new Date(ud.t).toLocaleString() : "—";
+  howEl.textContent = a.how || "Play more protocols to discover the requirement.";
+}
+
+function renderAchievements() {
+  bindAchievementUIOnce();
+
+  const listEl = document.getElementById("achievement-list");
+  const totalEl = document.getElementById("achv-total-count");
+  const unlockedEl = document.getElementById("achv-unlocked-count");
+  const percentEl = document.getElementById("achv-percent");
+  const barEl = document.getElementById("achv-progress-bar");
+
+  if (!listEl) return;
+
+  const total = ACHIEVEMENTS.length;
+  const unlockedCount = ACHIEVEMENTS.reduce((acc, a) => acc + (unlocked[a.id] ? 1 : 0), 0);
+  const pct = total > 0 ? (unlockedCount / total * 100) : 0;
+
+  totalEl.textContent = String(total);
+  unlockedEl.textContent = String(unlockedCount);
+  percentEl.textContent = pct.toFixed(0) + "%";
+  barEl.style.width = Math.max(0, Math.min(100, pct)) + "%";
+
+  // 1) 필터 + 검색
+  let items = ACHIEVEMENTS.slice();
+
+  if (achvUI.filter === "unlocked") items = items.filter(a => !!unlocked[a.id]);
+  if (achvUI.filter === "locked") items = items.filter(a => !unlocked[a.id]);
+
+  if (achvUI.search) {
+    const q = achvUI.search;
+    items = items.filter(a =>
+      (a.name || "").toLowerCase().includes(q) ||
+      (a.desc || "").toLowerCase().includes(q) ||
+      (a.how || "").toLowerCase().includes(q)
+    );
+  }
+
+  // 2) 정렬
+  items.sort((a, b) => {
+    const au = unlocked[a.id];
+    const bu = unlocked[b.id];
+
+    if (achvUI.sort === "recent") {
+      // unlocked 최신 우선, locked는 뒤로
+      const at = au ? au.t : -1;
+      const bt = bu ? bu.t : -1;
+      return bt - at;
+    }
+
+    if (achvUI.sort === "name") {
+      return (a.name || "").localeCompare((b.name || ""));
+    }
+
+    if (achvUI.sort === "rarity") {
+      return (b.rarity || 1) - (a.rarity || 1);
+    }
+
+    if (achvUI.sort === "progress") {
+      // unlocked 우선
+      return (bu ? 1 : 0) - (au ? 1 : 0);
+    }
+
+    return 0;
+  });
+
+  // 3) 선택 유효성
+  if (achvUI.selectedId && !ACHIEVEMENTS.find(x => x.id === achvUI.selectedId)) {
+    achvUI.selectedId = null;
+  }
+
+  // 4) 렌더
+  listEl.innerHTML = "";
+
+  if (items.length === 0) {
+    listEl.innerHTML = `
+      <div class="p-6 text-sm opacity-60">
+        No achievements matched your filters.
+      </div>
+    `;
+    setAchievementDetail(null);
+    return;
+  }
+
+  items.forEach(a => {
+    const ud = unlocked[a.id];
+    const isUnlocked = !!ud;
+
+    const rr = rarityLabel(a.rarity || 1);
+
+    const row = document.createElement("div");
+    row.className = `achv-row ${isUnlocked ? "" : "achv-locked"} ${achvUI.selectedId === a.id ? "selected" : ""}`;
+
+    row.innerHTML = `
+      <div class="achv-icon" style="${isUnlocked ? "" : "filter: grayscale(0.2);"}">
+        ${a.icon || "🏆"}
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <div class="font-black truncate">${a.name}</div>
+          <span class="achv-pill" style="border-color:${rr.color}; color:${rr.color};">
+            ${rr.t}
+          </span>
+        </div>
+
+        <div class="text-sm opacity-70 mt-1 leading-relaxed">
+          ${a.desc}
+        </div>
+
+        <div class="mt-2 flex items-center gap-3">
+          <span class="achv-badge" style="border-color:${isUnlocked ? "rgba(0,246,255,0.35)" : "rgba(255,255,255,0.12)"}; color:${isUnlocked ? "rgba(0,246,255,0.95)" : "rgba(255,255,255,0.65)"};">
+            ${isUnlocked ? "UNLOCKED" : "LOCKED"}
+          </span>
+
+          <span class="achv-mini">
+            ${isUnlocked ? ("Unlocked: " + new Date(ud.t).toLocaleString()) : "Requirement: " + (a.how || "Hidden")}
+          </span>
+        </div>
+      </div>
+    `;
+
+    row.onclick = () => {
+      achvUI.selectedId = a.id;
+      setAchievementDetail(a);
+      renderAchievements();
+    };
+
+    listEl.appendChild(row);
+  });
+
+  // 5) 상세 패널 초기 선택
+  if (!achvUI.selectedId) {
+    // 기본: 첫 항목 선택
+    const first = items[0];
+    achvUI.selectedId = first.id;
+    setAchievementDetail(first);
+    // 재렌더는 굳이 안 돌려도 되지만, selected 표시 맞추려면 한 번
+    renderAchievements();
+    return;
+  } else {
+    const sel = ACHIEVEMENTS.find(x => x.id === achvUI.selectedId);
+    setAchievementDetail(sel);
+  }
+}
+
+
+
+    // endGame에서 호출
+    function checkAchievementsOnEnd(finalRank, accVal) {
+    // endless는 기본적으로 랭크 개념이 약하니 생존 업적 중심
+    if (gameMode === "single") {
+        // PARADOX 0회 업적: 현재 코드에는 paradox 카운트가 없으므로 아래 3-3에서 카운터 추가 필요
+        if (stats.paradox === 0) unlockAchievement("PARADOX_FREE");
+
+        if (stats.miss === 0) unlockAchievement("PERFECT_RECALL");
+        if (finalRank === "SSS") unlockAchievement("SSS_SYNC");
+    }
+    }
+
+    let stats = { miss: 0, paradox: 0 };
+
+
+        // Stats for accuracy
+        let totalNotesSpawned = 0;
+        let totalNotesHit = 0;
+
+        // Health variables
+        let health = 100;
+        const MAX_HEALTH = 100;
+        let clutchActive = false;
+    const CLUTCH_THRESHOLD = 20;   // %
+    const CLUTCH_SPEED_MULT = 0.90; // 10% 슬로우
+
+
+        // UI Event Listeners
+        openSettingsBtn.onclick = () => settingsModal.classList.remove('hidden');
+        closeSettingsBtn.onclick = () => {
+            settingsModal.classList.add('hidden');
+            localStorage.setItem('timeLoopSettings', JSON.stringify({
+                volume: CONFIG.masterVolume,
+                keyCodes: CONFIG.keyCodes,
+                keyNames: CONFIG.keyNames
+            }));
+            for(let i=0; i<4; i++) {
+                document.getElementById(`hint-${i}`).innerText = CONFIG.keyNames[i];
+            }
+        };
+
+        openHelpBtn.onclick = () => helpModal.classList.remove('hidden');
+        closeHelpBtn.onclick = () => helpModal.classList.add('hidden');
+
+        function initSettingsUI() {
+            volumeSlider.value = CONFIG.masterVolume;
+            volumeDisplay.innerText = Math.round(CONFIG.masterVolume * 100) + '%';
+            for(let i=0; i<4; i++) {
+                const input = document.getElementById(`key-lane-${i}`);
+                input.value = CONFIG.keyNames[i];
+                document.getElementById(`hint-${i}`).innerText = CONFIG.keyNames[i];
+
+                input.onclick = () => {
+                    input.classList.add('border-[var(--vapor-blue)]');
+                    input.value = '...';
+                    const listenKey = (e) => {
+                        e.preventDefault();
+                        const key = e.key.toUpperCase();
+                        const code = e.code;
+                        input.value = key === " " ? "SPC" : key;
+                        CONFIG.keyCodes[i] = code;
+                        CONFIG.keyNames[i] = input.value;
+                        input.classList.remove('border-[var(--vapor-blue)]');
+                        window.removeEventListener('keydown', listenKey);
+                    };
+                    window.addEventListener('keydown', listenKey);
+                };
+            }
+        }
+        initSettingsUI();
+
+        volumeSlider.oninput = () => {
+            CONFIG.masterVolume = parseFloat(volumeSlider.value);
+            volumeDisplay.innerText = Math.round(CONFIG.masterVolume * 100) + '%';
+            if (gainNode) gainNode.gain.value = CONFIG.masterVolume;
+        };
+
+
+        function savePlayerData() {
+    const dataToSave = playlist.map(s => ({
+        id: s.id,
+        name: s.name,
+        bpm: s.bpm,
+        isTutorial: s.isTutorial,
+        source: s.source || (s.isTutorial ? "official" : "custom"),
+        highScore: s.highScore,
+        maxCombo: s.maxCombo
+    }));
+    localStorage.setItem('timeLoopPlaylist', JSON.stringify(dataToSave));
+    }
+
+
+        document.getElementById('mode-single').onclick = () => {
+            gameMode = 'single';
+            document.getElementById('mode-single').classList.add('active');
+            document.getElementById('mode-endless').classList.remove('active');
+        };
+        document.getElementById('mode-endless').onclick = () => {
+            gameMode = 'endless';
+            document.getElementById('mode-endless').classList.add('active');
+            document.getElementById('mode-single').classList.remove('active');
+        };
+
+        songUpload.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const newId = 'custom_' + Date.now();
+                playlist.push({ 
+                    id: newId, 
+                    name: file.name.replace(/\.[^/.]+$/, ""), 
+                    file, 
+                    bpm: 124,
+                    source: "custom", 
+                    highScore: 0, 
+                    maxCombo: 0 
+                });
+                savePlayerData();
+                renderPlaylist();
+            }
+        };
+
+    let libraryTab = "official";
+
+    document.getElementById("tab-official").onclick = () => {
+    libraryTab = "official";
+    document.getElementById("tab-official").classList.add("active");
+    document.getElementById("tab-custom").classList.remove("active");
+    renderPlaylist();
+    };
+
+    document.getElementById("tab-custom").onclick = () => {
+    libraryTab = "custom";
+    document.getElementById("tab-custom").classList.add("active");
+    document.getElementById("tab-official").classList.remove("active");
+    renderPlaylist();
+    };
+
+
+        function renderPlaylist() {
+    songListContainer.innerHTML = '';
+
+    const list = playlist.filter(song => {
+        const src = song.source || (song.isTutorial ? "official" : "custom");
+        return src === libraryTab;
+    });
+
+    list.forEach((song) => {
+                const card = document.createElement('div');
+                card.className = `stage-card p-4 rounded-lg flex items-center justify-between ${selectedSong?.id === song.id ? 'selected' : ''}`;
+                
+                const records = song.highScore > 0 ? 
+                    `<div class="flex gap-3 mt-1 opacity-60 text-[8px] font-mono">
+                        <span>BEST: ${song.highScore.toLocaleString()}</span>
+                        <span>COMBO: ${song.maxCombo}</span>
+                    </div>` : 
+                    `<div class="mt-1 opacity-30 text-[8px] font-mono italic text-[var(--vapor-pink)]">NO DATA YET</div>`;
+
+                card.innerHTML = `
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                        <span class="text-[var(--vapor-blue)] font-mono text-[8px] uppercase tracking-tighter">${song.isTutorial ? 'Pre-installed' : 'User Data'}</span>
+                        <span class="text-sm font-bold truncate pr-2">${song.name}</span>
+                        ${records}
+                    </div>
+                    <div class="text-[10px] font-mono opacity-50 uppercase text-right whitespace-nowrap">${song.isTutorial ? 'Ready' : (song.file ? 'Linked' : 'Reload File')}</div>
+                `;
+                card.onclick = () => {
+                    if (!song.isTutorial && !song.file) {
+                        statusMsg.innerText = "ERROR: FILE NOT LOADED. RE-IMPORT MP3.";
+                        return;
+                    }
+                    selectedSong = song;
+                    renderPlaylist();
+                    playBtn.disabled = false;
+                    statusMsg.innerText = `READY: ${song.name}`;
+                };
+                songListContainer.appendChild(card);
+            });
+        }
+        renderPlaylist();
+
+       async function prepareAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  if (selectedSong.isTutorial) {
+    // 기존 튜토리얼 처리 유지
+  } else {
+    if (selectedSong.filePath) {
+      // ✅ Electron: fs로 직접 읽기
+      const fs = window.require?.("fs");
+      const buffer = fs.readFileSync(selectedSong.filePath);
+      const arrayBuffer = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength
+      );
+      audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    } else if (selectedSong.file) {
+      // 웹/업로드 방식
+      const arrayBuffer = await selectedSong.file.arrayBuffer();
+      audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    } else {
+      throw new Error("Audio source not found");
+    }
+  }
+
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = CONFIG.masterVolume;
+  gainNode.connect(audioCtx.destination);
+}
+
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = Math.random() * 4 + 2;
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = (Math.random() - 0.5) * 10;
+                this.life = 1.0;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.02;
+            }
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class Note {
+            constructor(lane, targetTime, isGhost = false) {
+                this.lane = lane;
+                this.targetTime = targetTime;
+                this.isGhost = isGhost;
+                this.hit = false;
+                if(!isGhost) totalNotesSpawned++;
+            }
+            draw(elapsed, speed) {
+                if (this.hit) return;
+                const laneWidth = canvas.width / CONFIG.lanes;
+                const x = this.lane * laneWidth + laneWidth / 2;
+                const timeDiff = this.targetTime - elapsed;
+                const judgeY = canvas.height * CONFIG.perfectY;
+                const y = judgeY - (timeDiff * speed);
+
+                ctx.save();
+                if (this.isGhost) {
+                    ctx.fillStyle = '#ff00de';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ff00de';
+                    ctx.globalAlpha = 0.5 + Math.sin(Date.now()/80) * 0.2;
+                    ctx.fillRect(x - 35, y - 10, 70, 20);
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x - 35, y - 10, 70, 20);
+                } else {
+                    ctx.fillStyle = '#00f6ff';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#00f6ff';
+                    ctx.fillRect(x - 45, y - 15, 90, 30);
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(x - 35, y - 3, 70, 6);
+                }
+                ctx.restore();
+
+                if (timeDiff < -CONFIG.judgeWindow && !this.hit) {
+                    this.hit = true;
+                    if (!this.isGhost) {
+                        combo = 0;
+                        document.getElementById('combo-container').classList.add('hidden');
+                        showJudge("MISS", "#555");
+                        stats.miss++; 
+                        updateHealth(-15);
+                    }
+                }
+            }
+        }
+
+        function updateHealth(amount) {
+            health = Math.min(MAX_HEALTH, Math.max(0, health + amount));
+            // Clutch mode on/off
+    const shouldClutch = (gameMode === 'endless' && health > 0 && health <= CLUTCH_THRESHOLD);
+    if (shouldClutch !== clutchActive) {
+    clutchActive = shouldClutch;
+
+    if (clutchActive) {
+        canvas.style.filter = "contrast(140%) brightness(115%) saturate(130%) hue-rotate(-10deg)";
+    } else {
+        canvas.style.filter = "";
+    }
+    }
+
+            document.getElementById('health-bar').style.width = health + "%";
+            if (health <= 0 && gameMode === 'endless' && isPlaying) {
+                endGame();
+            }
+        }
+
+        function createHitEffect(lane, color) {
+            const lw = canvas.width / CONFIG.lanes;
+            const x = lane * lw + lw / 2;
+            const y = canvas.height * CONFIG.perfectY;
+            for(let i=0; i<15; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function showJudge(txt, color) {
+            const container = document.getElementById('judge-container');
+            const div = document.createElement('div');
+            div.className = "judge-popup text-5xl font-black italic";
+            div.innerText = txt;
+            div.style.color = color;
+            div.style.textShadow = `0 0 15px ${color}`;
+            container.innerHTML = '';
+            container.appendChild(div);
+        }
+
+    function animateNumber(el, from, to, durationMs, formatter) {
+    const start = performance.now();
+    function tick(now) {
+        const t = Math.min(1, (now - start) / durationMs);
+        const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+        const v = from + (to - from) * eased;
+        el.innerText = formatter ? formatter(v) : String(Math.round(v));
+        if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    }
+
+    function animatePercent(el, from, to, durationMs) {
+    const start = performance.now();
+    function tick(now) {
+        const t = Math.min(1, (now - start) / durationMs);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const v = from + (to - from) * eased;
+        el.innerText = v.toFixed(1) + "%";
+        if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    }
+
+        function getRank(score, acc) {
+            // Detailed rank calculation F to SSS
+            if (acc >= 99 && score > 50000) return 'SSS';
+            if (acc >= 95) return 'SS';
+            if (acc >= 90) return 'S';
+            if (acc >= 80) return 'A';
+            if (acc >= 70) return 'B';
+            if (acc >= 60) return 'C';
+            if (acc >= 40) return 'D';
+            return 'F';
+        }
+
+        function endGame() {
+    isPlaying = false;
+    if (audioSource) audioSource.stop();
+
+    const songIdx = playlist.findIndex(s => s.id === selectedSong.id);
+    if (songIdx !== -1) {
+        if (score > playlist[songIdx].highScore) playlist[songIdx].highScore = score;
+        if (maxCombo > playlist[songIdx].maxCombo) playlist[songIdx].maxCombo = maxCombo;
+        savePlayerData();
+    }
+
+    const accVal = totalNotesSpawned > 0 ? (totalNotesHit / totalNotesSpawned * 100) : 0;
+
+    if (accVal >= 90) unlockAchievement("ACC_90");
+if (accVal >= 98) unlockAchievement("ACC_98");
+if (accVal === 100) unlockAchievement("ACC_100");
+
+
+    const resultScreen = document.getElementById('result-screen');
+    const rankEl = document.getElementById('result-rank');
+    const rankContainer = document.getElementById('result-rank-container');
+    const scoreEl = document.getElementById('result-score');
+    const accEl = document.getElementById('result-acc');
+    const comboEl = document.getElementById('result-combo');
+
+    // 결과 화면 열기 + 초기화
+    resultScreen.classList.remove('hidden');
+    rankContainer.innerHTML = `<div class="text-[10rem] font-black italic leading-none" id="result-rank" style="text-shadow: 10px 10px var(--vapor-pink);"></div>`;
+    const newRankEl = document.getElementById('result-rank');
+
+    scoreEl.innerText = "0";
+    accEl.innerText = "0.0%";
+    comboEl.innerText = "000";
+
+    // 숫자 팝 애니
+    scoreEl.classList.remove('result-pop');
+    accEl.classList.remove('result-pop');
+    comboEl.classList.remove('result-pop');
+    void scoreEl.offsetWidth;
+
+    scoreEl.classList.add('result-pop');
+    accEl.classList.add('result-pop');
+    comboEl.classList.add('result-pop');
+
+    // 숫자 카운트업
+    animateNumber(scoreEl, 0, score, 900, (v) => Math.round(v).toLocaleString());
+    animatePercent(accEl, 0, accVal, 800);
+    animateNumber(comboEl, 0, maxCombo, 700, (v) => String(Math.round(v)).padStart(3, '0'));
+
+    // 등급 결정
+    let finalRank = "-";
+    if (gameMode === 'endless') {
+        finalRank = "-";
+    } else {
+        finalRank = getRank(score, accVal);
+    }
+
+    // 랭크 “쾅” 등장(마지막)
+    setTimeout(() => {
+        resultScreen.classList.add('screen-shake');
+
+        if (gameMode === 'endless') {
+        newRankEl.innerText = "ENDLESS";
+        newRankEl.style.fontSize = "4rem";
+        newRankEl.style.letterSpacing = "0.2em";
+        newRankEl.style.color = "var(--vapor-blue)";
+        newRankEl.style.textShadow = "0 0 25px rgba(0,246,255,0.6)";
+        } else {
+        newRankEl.innerText = finalRank;
+        }
+
+        newRankEl.classList.remove('rank-slam');
+        void newRankEl.offsetWidth;
+        newRankEl.classList.add('rank-slam');
+
+        setTimeout(() => resultScreen.classList.remove('screen-shake'), 260);
+    }, 900);
+
+
+    // 업적 체크 (3번에서 아래 함수 추가)
+    checkAchievementsOnEnd(finalRank, accVal);
+    }
+
+
+        function animate() {
+            if (!isPlaying) return;
+            
+            ctx.fillStyle = '#050510'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = 'rgba(0, 246, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for(let x=0; x<canvas.width; x+=50) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for(let y=0; y<canvas.height; y+=50) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            const totalElapsed = (audioCtx.currentTime - startTime) * 1000;
+            const elapsed = totalElapsed % CONFIG.loopDuration;
+
+    const effectiveSpeed = clutchActive ? (currentSpeed * CLUTCH_SPEED_MULT) : currentSpeed;
+
+            // Glitch Effect Trigger at end of loop (1 second duration)
+            if (elapsed > CONFIG.loopDuration - 300) {
+                canvas.classList.add('glitch-effect');
+            } else {
+                canvas.classList.remove('glitch-effect');
+            }
+
+            if (gameMode === 'single') {
+                const totalDuration = audioBuffer.duration * 1000;
+                const progress = Math.min(100, Math.floor((totalElapsed / totalDuration) * 100));
+                document.getElementById('stage-percent').innerText = `${progress}%`;
+            } else {
+                document.getElementById('stage-percent').innerText = `∞`;
+            }
+
+            if (totalElapsed > loopCount * CONFIG.loopDuration) {
+                if (gameMode === 'single' && totalElapsed >= audioBuffer.duration * 1000) {
+                    endGame();
+                    return;
+                }
+                loopCount++;
+                if (gameMode === "endless" && loopCount === 3) unlockAchievement("ENDLESS_3");
+if (gameMode === "endless" && loopCount === 10) unlockAchievement("ENDLESS_10");
+if (gameMode === "endless" && loopCount === 25) unlockAchievement("ENDLESS_25");
+// 루프 증가 구간(animate에서 loopCount++ 직후 추천)
+if (loopCount === 5) unlockAchievement("LOOP_5");
+if (loopCount === 20) unlockAchievement("LOOP_20");
+
+// 싱글 첫 클리어(FIRST_SYNC): endGame()에서 싱글일 때
+if (gameMode === "single") unlockAchievement("FIRST_SYNC");
+
+
+                if (loopCount === 2) unlockAchievement("FIRST_LOOP");
+                if (gameMode === "endless" && loopCount >= 10) unlockAchievement("TIME_PRISONER");
+
+                document.getElementById('loop-count').innerText = loopCount;
+                
+                if (gameMode === 'endless') {
+                    currentSpeed *= 1.05;
+                    document.getElementById('difficulty-badge').classList.remove('hidden');
+                    document.getElementById('difficulty-badge').innerText = `SPEED x${(currentSpeed/CONFIG.noteBaseSpeed).toFixed(1)}`;
+                }
+
+                pastLoopNotes = [...pastLoopNotes, ...currentLoopNotes];
+                currentLoopNotes = [];
+                lastBeat = 0;
+                
+                if(loopCount === 2) {
+                    document.getElementById('tutorial-msg').innerText = "AVOID THE PINK ECHOES OF YOUR PAST ACTIONS!";
+                    document.getElementById('tutorial-msg').style.color = "var(--vapor-pink)";
+                }
+            }
+
+            const lw = canvas.width / CONFIG.lanes;
+            for(let i=0; i<CONFIG.lanes; i++) {
+                if (laneFeedback[i] > 0) {
+                    const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
+                    grad.addColorStop(0, `rgba(0, 246, 255, ${laneFeedback[i] * 0.3})`);
+                    grad.addColorStop(1, `rgba(0, 246, 255, 0)`);
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(i * lw, 0, lw, canvas.height);
+                    laneFeedback[i] -= 0.05;
+                }
+            }
+
+            const py = canvas.height * CONFIG.perfectY;
+            ctx.strokeStyle = 'var(--vapor-blue)';
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke();
+
+            document.getElementById('progress-bar').style.width = (elapsed / CONFIG.loopDuration * 100) + "%";
+
+            const bpm = selectedSong.bpm || 120;
+            const beatMs = 60000 / bpm;
+            if (elapsed > (lastBeat + 1) * beatMs) {
+                if (Math.random() > 0.45) {
+                    notes.push(new Note(Math.floor(Math.random() * 4), elapsed + (1000 / effectiveSpeed)));
+                }
+                lastBeat++;
+            }
+
+            pastLoopNotes.forEach(p => {
+                const target = p.time;
+                const spawnLeadTime = 1000 / effectiveSpeed;
+                const diff = Math.abs(elapsed - (target - spawnLeadTime));
+                if (diff < 20) {
+                    if (!notes.find(n => n.isGhost && n.targetTime === target && n.lane === p.lane)) {
+                        notes.push(new Note(p.lane, target, true));
+                    }
+                }
+            });
+
+            notes.forEach(n => n.draw(elapsed, effectiveSpeed));
+            notes = notes.filter(n => !n.hit);
+
+            particles.forEach((p, idx) => {
+                p.update();
+                p.draw();
+                if(p.life <= 0) particles.splice(idx, 1);
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!isPlaying) return;
+            const lane = CONFIG.keyCodes.indexOf(e.code);
+            if (lane !== -1) {
+                laneFeedback[lane] = 1.0;
+                const totalElapsed = (audioCtx.currentTime - startTime) * 1000;
+                const elapsed = totalElapsed % CONFIG.loopDuration;
+                
+                const targetNotes = notes.filter(n => !n.isGhost && n.lane === lane && Math.abs(n.targetTime - elapsed) < CONFIG.judgeWindow);
+                targetNotes.sort((a, b) => a.targetTime - b.targetTime);
+                
+                if (targetNotes.length > 0) {
+                    const n = targetNotes[0];
+                    n.hit = true;
+                    totalNotesHit++;
+                    combo++;
+                    maxCombo = Math.max(maxCombo, combo);
+                    score += 100 + (combo * 10);
+                    showJudge("PERFECT", "var(--vapor-blue)");
+                    createHitEffect(lane, "var(--vapor-blue)");
+                    updateHealth(2); 
+                    currentLoopNotes.push({lane: lane, time: n.targetTime});
+                    document.getElementById('score-val').innerText = score.toString().padStart(6, '0');
+                    if (combo >= 3) {
+                        document.getElementById('combo-container').classList.remove('hidden');
+                        document.getElementById('combo-val').innerText = combo;
+                    }
+                } else {
+                    const ghostIdx = notes.findIndex(n => n.isGhost && n.lane === lane && Math.abs(n.targetTime - elapsed) < CONFIG.judgeWindow / 2);
+                    if (ghostIdx !== -1) {
+                        combo = 0;
+                        score = Math.max(0, score - 500);
+                        showJudge("PARADOX", "var(--vapor-pink)");
+                        createHitEffect(lane, "var(--vapor-pink)");
+                        stats.paradox++; 
+                        updateHealth(-25); 
+                        notes[ghostIdx].hit = true;
+                        document.getElementById('combo-container').classList.add('hidden');
+                        document.getElementById('score-val').innerText = score.toString().padStart(6, '0');
+                    }
+                }
+            }
+        });
+
+        playBtn.onclick = async () => {
+            try {
+                statusMsg.innerText = " ";
+                totalNotesSpawned = 0;
+                totalNotesHit = 0;
+                score = 0;
+                combo = 0;
+                maxCombo = 0;
+                loopCount = 1;
+                notes = [];
+                pastLoopNotes = [];
+                currentLoopNotes = [];
+                stats = { miss: 0, paradox: 0 };
+
+
+                await prepareAudio();
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-ui').style.opacity = '1';
+                document.getElementById('current-track-name').innerText = selectedSong.name;
+                
+                if(gameMode === 'endless') {
+                    document.getElementById('health-container').style.display = 'block';
+                    health = 100;
+                    document.getElementById('health-bar').style.width = "100%";
+                } else {
+                    document.getElementById('health-container').style.display = 'none';
+                }
+                
+                audioSource = audioCtx.createBufferSource();
+                audioSource.buffer = audioBuffer;
+                audioSource.loop = (gameMode === 'endless');
+                audioSource.connect(gainNode);
+                
+                if (gameMode === 'single') audioSource.onended = endGame;
+
+                audioSource.start(0);
+                startTime = audioCtx.currentTime;
+                isPlaying = true;
+                animate();
+            } catch (e) {
+                console.error(e);
+                alert("Protocol Error: " + e.message);
+            }
+        };
+
+        window.onresize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        window.onresize();
+    </script>
+    </body>
+    </html>
