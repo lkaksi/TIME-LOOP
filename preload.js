@@ -15,5 +15,11 @@ contextBridge.exposeInMainWorld("songAPI", {
         name: file.replace(/\.[^/.]+$/, ""),
         path: path.join(songsDir, file)
       }));
+  },
+
+  readSongFileAsArrayBuffer: (filePath) => {
+    if (!filePath || !fs.existsSync(filePath)) return null;
+    const buffer = fs.readFileSync(filePath);
+    return Uint8Array.from(buffer);
   }
 });

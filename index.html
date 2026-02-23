@@ -748,12 +748,69 @@
             masterVolume: 0.7
         };
 
+        // Official fixed charts (per-loop timeline, ms)
+        const OFFICIAL_CHARTS = {
+            official_1: [
+                { time: 600, lane: 0, type: 'tap' },
+                { time: 900, lane: 1, type: 'tap' },
+                { time: 1200, lane: 2, type: 'tap' },
+                { time: 1500, lane: 3, type: 'tap' },
+                { time: 1900, lane: 1, type: 'tap' },
+                { time: 2200, lane: 0, type: 'tap' },
+                { time: 2500, lane: 2, type: 'tap' },
+                { time: 2800, lane: 3, type: 'tap' },
+                { time: 3300, lane: 0, type: 'tap' },
+                { time: 3600, lane: 2, type: 'tap' },
+                { time: 3900, lane: 1, type: 'tap' },
+                { time: 4200, lane: 3, type: 'tap' },
+                { time: 4700, lane: 0, type: 'tap' },
+                { time: 5000, lane: 1, type: 'tap' },
+                { time: 5300, lane: 2, type: 'tap' },
+                { time: 5600, lane: 3, type: 'tap' },
+                { time: 6100, lane: 3, type: 'tap' },
+                { time: 6400, lane: 2, type: 'tap' },
+                { time: 6700, lane: 1, type: 'tap' },
+                { time: 7000, lane: 0, type: 'tap' }
+            ],
+            official_2: [
+                { time: 500, lane: 0, type: 'tap' },
+                { time: 800, lane: 2, type: 'tap' },
+                { time: 1100, lane: 1, type: 'tap' },
+                { time: 1400, lane: 3, type: 'tap' },
+                { time: 1750, lane: 0, type: 'tap' },
+                { time: 2050, lane: 1, type: 'tap' },
+                { time: 2350, lane: 2, type: 'tap' },
+                { time: 2650, lane: 3, type: 'tap' },
+                { time: 3050, lane: 1, type: 'tap' },
+                { time: 3350, lane: 0, type: 'tap' },
+                { time: 3650, lane: 3, type: 'tap' },
+                { time: 3950, lane: 2, type: 'tap' },
+                { time: 4350, lane: 0, type: 'tap' },
+                { time: 4650, lane: 2, type: 'tap' },
+                { time: 4950, lane: 1, type: 'tap' },
+                { time: 5250, lane: 3, type: 'tap' },
+                { time: 5650, lane: 2, type: 'tap' },
+                { time: 5950, lane: 0, type: 'tap' },
+                { time: 6250, lane: 3, type: 'tap' },
+                { time: 6550, lane: 1, type: 'tap' },
+                { time: 6950, lane: 0, type: 'tap' },
+                { time: 7250, lane: 3, type: 'tap' }
+            ]
+        };
+
+        function getFixedChartForSong(song) {
+            if (!song || song.source !== 'official') return null;
+            return OFFICIAL_CHARTS[song.id] || null;
+        }
+
         let gameMode = 'single'; 
         let currentSpeed = CONFIG.noteBaseSpeed;
+        let activeFixedChart = null;
+        let fixedChartCursor = 0;
         
         let playlist = JSON.parse(localStorage.getItem('timeLoopPlaylist')) || [
-    { id: 'official_1', name: "INITIALIZE", bpm: 128, isTutorial: true, source: "official", highScore: 0, maxCombo: 0 },
-    { id: 'official_2', name: "VAPORWAVE DRIVE", bpm: 110, isTutorial: true, source: "official", highScore: 0, maxCombo: 0 }
+    { id: 'official_1', name: "INITIALIZE", bpm: 128, isTutorial: true, source: "official", audioPath: "songs/no-copyright.mp3", highScore: 0, maxCombo: 0 },
+    { id: 'official_2', name: "VAPORWAVE DRIVE", bpm: 110, isTutorial: true, source: "official", audioPath: "songs/running-night.mp3", highScore: 0, maxCombo: 0 }
     ];
 
     // ✅ Electron exe 환경: songs 폴더 자동 로드
@@ -1408,31 +1465,63 @@ function renderAchievements() {
        async function prepareAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  if (selectedSong.isTutorial) {
-    // 기존 튜토리얼 처리 유지
-  } else {
-    if (selectedSong.filePath) {
-      // ✅ Electron: fs로 직접 읽기
-      const fs = window.require?.("fs");
-      const buffer = fs.readFileSync(selectedSong.filePath);
-      const arrayBuffer = buffer.buffer.slice(
-        buffer.byteOffset,
-        buffer.byteOffset + buffer.byteLength
+  const decodeAudioDataSafe = async (arrayBuffer) => {
+    const cloned = arrayBuffer.slice(0);
+
+    try {
+      const maybePromise = audioCtx.decodeAudioData(cloned);
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        return await maybePromise;
+      }
+    } catch (_) {
+      // callback fallback below
+    }
+
+    return await new Promise((resolve, reject) => {
+      audioCtx.decodeAudioData(
+        cloned,
+        (decoded) => resolve(decoded),
+        (err) => reject(err || new Error('decodeAudioData failed'))
       );
-      audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    });
+  };
+
+  const decodeFromUrl = async (url) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load audio: ${url}`);
+    const arrayBuffer = await res.arrayBuffer();
+    return await decodeAudioDataSafe(arrayBuffer);
+  };
+
+  if (selectedSong.isTutorial) {
+    const tutorialAudioPath = selectedSong.audioPath || 'songs/no-copyright.mp3';
+    audioBuffer = await decodeFromUrl(tutorialAudioPath);
+  } else {
+    if (selectedSong.filePath && window.songAPI?.readSongFileAsArrayBuffer) {
+      const raw = window.songAPI.readSongFileAsArrayBuffer(selectedSong.filePath);
+      if (!raw) throw new Error(`Failed to read local file: ${selectedSong.filePath}`);
+      const arrayBuffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+      audioBuffer = await decodeAudioDataSafe(arrayBuffer);
+    } else if (selectedSong.filePath) {
+      const fileName = selectedSong.filePath.split(/[\\/]/).pop();
+      audioBuffer = await decodeFromUrl(`songs/${fileName}`);
     } else if (selectedSong.file) {
-      // 웹/업로드 방식
       const arrayBuffer = await selectedSong.file.arrayBuffer();
-      audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      audioBuffer = await decodeAudioDataSafe(arrayBuffer);
     } else {
       throw new Error("Audio source not found");
     }
+  }
+
+  if (!audioBuffer || typeof audioBuffer.duration !== 'number') {
+    throw new Error('Audio decode failed: invalid buffer');
   }
 
   gainNode = audioCtx.createGain();
   gainNode.gain.value = CONFIG.masterVolume;
   gainNode.connect(audioCtx.destination);
 }
+
 
 
         class Particle {
@@ -1735,6 +1824,7 @@ if (gameMode === "single") unlockAchievement("FIRST_SYNC");
                 pastLoopNotes = [...pastLoopNotes, ...currentLoopNotes];
                 currentLoopNotes = [];
                 lastBeat = 0;
+                fixedChartCursor = 0;
                 
                 if(loopCount === 2) {
                     document.getElementById('tutorial-msg').innerText = "AVOID THE PINK ECHOES OF YOUR PAST ACTIONS!";
@@ -1761,13 +1851,26 @@ if (gameMode === "single") unlockAchievement("FIRST_SYNC");
 
             document.getElementById('progress-bar').style.width = (elapsed / CONFIG.loopDuration * 100) + "%";
 
-            const bpm = selectedSong.bpm || 120;
-            const beatMs = 60000 / bpm;
-            if (elapsed > (lastBeat + 1) * beatMs) {
-                if (Math.random() > 0.45) {
-                    notes.push(new Note(Math.floor(Math.random() * 4), elapsed + (1000 / effectiveSpeed)));
+            if (gameMode === 'single' && activeFixedChart?.length) {
+                const spawnLeadTime = 1000 / effectiveSpeed;
+                while (
+                    fixedChartCursor < activeFixedChart.length &&
+                    elapsed >= activeFixedChart[fixedChartCursor].time - spawnLeadTime
+                ) {
+                    const entry = activeFixedChart[fixedChartCursor];
+                    notes.push(new Note(entry.lane, entry.time));
+                    fixedChartCursor++;
                 }
-                lastBeat++;
+            } else {
+                // Endless and custom tracks keep random spawning
+                const bpm = selectedSong.bpm || 120;
+                const beatMs = 60000 / bpm;
+                if (elapsed > (lastBeat + 1) * beatMs) {
+                    if (Math.random() > 0.45) {
+                        notes.push(new Note(Math.floor(Math.random() * 4), elapsed + (1000 / effectiveSpeed)));
+                    }
+                    lastBeat++;
+                }
             }
 
             pastLoopNotes.forEach(p => {
@@ -1850,6 +1953,8 @@ if (gameMode === "single") unlockAchievement("FIRST_SYNC");
                 pastLoopNotes = [];
                 currentLoopNotes = [];
                 stats = { miss: 0, paradox: 0 };
+                activeFixedChart = (gameMode === 'single') ? getFixedChartForSong(selectedSong) : null;
+                fixedChartCursor = 0;
 
 
                 await prepareAudio();
