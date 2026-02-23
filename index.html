@@ -239,6 +239,103 @@
     .rank-slam  { animation: slam 0.65s cubic-bezier(0.175,0.885,0.32,1.275) both; }
     .screen-shake { animation: shake 0.22s ease-in-out 1; }
 
+                /* ==================== 업적 탭 스타일 ==================== */
+
+    .achv-row {
+      display: flex;
+      gap: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .achv-row:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .achv-row.achv-locked {
+      opacity: 0.7;
+    }
+
+    .achv-row.selected {
+      background: rgba(255, 0, 222, 0.1);
+      border-left-color: var(--vapor-pink);
+    }
+
+    .achv-icon {
+      font-size: 28px;
+      line-height: 1;
+      min-width: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .achv-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .achv-name {
+      font-weight: bold;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .achv-desc {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 2px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .achv-rarity {
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .achv-detail-content {
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 필터 버튼 */
+    .mode-btn {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
+      background: transparent;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .mode-btn.active {
+      background: white;
+      color: black;
+      box-shadow: 0 0 20px white;
+    }
+
+    .mode-btn:hover:not(.active) {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+    }
         </style>
     </head>
     <body>
@@ -484,157 +581,100 @@
         </div>
     </div>
 
-    <div id="achievement-modal"
-        class="absolute inset-0 z-[400] hidden flex items-center justify-center bg-[#050510]/95 backdrop-blur-2xl">
 
-        <div class="bg-white/5 border border-white/10 p-10 rounded-2xl
-                    w-full max-w-3xl max-h-[90vh] overflow-y-auto">
 
-            <h2 class="text-4xl font-black italic mb-2 tracking-tighter
-                    text-[var(--vapor-pink)] uppercase">
-                Achievements
-            </h2>
+<!-- 업적 모달 (새 버전) -->
+<div id="achievement-modal"
+     class="absolute inset-0 z-[400] hidden flex items-center justify-center bg-[#050510]/95 backdrop-blur-2xl">
 
-            <p class="text-xs font-mono opacity-40 uppercase tracking-widest mb-8
-                    border-b border-white/10 pb-4">
-                Memory Records
-            </p>
+  <div class="bg-white/5 border border-white/10 p-10 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+    
+    <!-- 제목 -->
+    <h2 class="text-4xl font-black italic mb-2 tracking-tighter text-[var(--vapor-pink)] uppercase">
+      Achievements
+    </h2>
+    <p class="text-xs font-mono opacity-40 uppercase tracking-widest mb-8 border-b border-white/10 pb-4">
+      Memory Records
+    </p>
 
-            <div class="flex flex-col gap-6">
-<!-- Detail Overlay (popup) -->
-<div id="achv-detail-overlay"
-     class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-  <div class="w-[min(760px,92vw)] rounded-2xl border border-white/10 bg-[#050510]/95 p-6 shadow-2xl">
-    <div class="flex items-center justify-between">
-      <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Achievement Details</div>
-      <button id="achv-detail-close"
-              class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">
-        Close
-      </button>
-    </div>
-
-    <div id="achv-detail-popup-content" class="mt-4">
-      <!-- JS로 채움 -->
-    </div>
-  </div>
-</div>
-
-  <!-- 상단: 요약/진행률 -->
-  <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div>
-        <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">Completion</div>
-        <div class="text-2xl font-black">
-          <span id="achv-unlocked-count">0</span>/<span id="achv-total-count">0</span>
-          <span class="text-sm font-mono opacity-60 ml-2" id="achv-percent">0%</span>
+    <!-- 통계 섹션 -->
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 mb-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <div>
+          <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">Completion</div>
+          <div class="text-2xl font-black">
+            <span id="achv-unlocked-count">0</span>/<span id="achv-total-count">0</span>
+            <span class="text-sm font-mono opacity-60 ml-2" id="achv-percent">0%</span>
+          </div>
+          <div class="text-[10px] font-mono opacity-50 mt-1">Your memory records, indexed.</div>
         </div>
-        <div class="text-[10px] font-mono opacity-50 mt-1" id="achv-subline">
-          Your memory records, indexed.
+
+        <!-- 필터 버튼 -->
+        <div class="flex items-center gap-3">
+          <button id="achv-filter-all" class="mode-btn active px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">All</button>
+          <button id="achv-filter-unlocked" class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Unlocked</button>
+          <button id="achv-filter-locked" class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Locked</button>
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
-        <button id="achv-filter-all" class="mode-btn active px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">All</button>
-        <button id="achv-filter-unlocked" class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Unlocked</button>
-        <button id="achv-filter-locked" class="mode-btn px-4 py-2 rounded-full font-bold text-[10px] tracking-widest uppercase">Locked</button>
-
-        <select id="achv-sort" class="bg-black/20 border border-white/15 rounded-xl px-3 py-2 text-[10px] font-mono tracking-widest uppercase">
-          <option value="recent">Recent</option>
-          <option value="name">Name</option>
-          <option value="rarity">Rarity</option>
-          <option value="progress">Progress</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="mt-4">
-      <div class="h-2 rounded-full bg-white/10 overflow-hidden border border-white/10">
+      <!-- 진행률 바 -->
+      <div class="h-2 w-full bg-white/10 rounded-full overflow-hidden">
         <div id="achv-progress-bar" class="h-full w-0 bg-gradient-to-r from-[var(--vapor-blue)] to-[var(--vapor-pink)] transition-all duration-300"></div>
       </div>
     </div>
 
-    <div class="mt-4 flex flex-col md:flex-row gap-3">
+    <!-- 검색 & 정렬 -->
+    <div class="mt-4 flex flex-col md:flex-row gap-3 mb-4">
       <input id="achv-search" type="text"
              class="flex-1 bg-black/20 border border-white/15 rounded-xl px-4 py-3 text-sm outline-none"
              placeholder="Search achievements (name / description)..." />
+      
+      <select id="achv-sort" class="bg-black/20 border border-white/15 rounded-xl px-4 py-3 text-sm outline-none">
+        <option value="recent">Recent</option>
+        <option value="name">Name</option>
+        <option value="rarity">Rarity</option>
+      </select>
+
       <button id="achv-reset" class="mode-btn px-5 py-3 rounded-xl font-bold text-[10px] tracking-widest uppercase">
-        Reset Filters
+        Reset
       </button>
     </div>
-  </div>
 
-  <!-- 본문: 리스트 + 상세 패널 -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-    <!-- 리스트 -->
-    <div class="lg:col-span-2 rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
-      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-        <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Archive</div>
-        <div class="text-[10px] font-mono opacity-40" id="achv-list-hint">
-          Click an item to view details.
+    <!-- 리스트 + 상세 패널 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      
+      <!-- 리스트 -->
+      <div class="lg:col-span-2 rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
+        <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Archive</div>
+          <div class="text-[10px] font-mono opacity-40">Click an item to view details.</div>
+        </div>
+        <div id="achievement-list" class="max-h-[52vh] overflow-y-auto divide-y divide-white/10">
+          <!-- JS로 채움 -->
         </div>
       </div>
 
-      <div id="achievement-list"
-           class="max-h-[52vh] overflow-y-auto divide-y divide-white/10">
-        <!-- JS로 채움 -->
+      <!-- 상세 패널 -->
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Details</div>
+        
+        <div id="achv-detail-empty" class="mt-6 opacity-60 text-sm leading-relaxed">
+          Select an achievement from the archive to inspect its record.
+        </div>
+
+        <div id="achv-detail" class="hidden mt-4">
+          <!-- JS로 채움 -->
+        </div>
       </div>
     </div>
 
-    <!-- 상세 -->
-    <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div class="text-xs font-mono tracking-widest opacity-60 uppercase">Details</div>
-
-      <div id="achv-detail-empty" class="mt-6 opacity-60 text-sm leading-relaxed">
-        Select an achievement from the archive to inspect its record.
-      </div>
-
-      <div id="achv-detail" class="hidden mt-4">
-        <div class="flex items-start gap-3">
-          <div id="achv-detail-icon" class="w-12 h-12 rounded-xl border border-white/10 bg-black/30 flex items-center justify-center text-xl">
-            🏆
-          </div>
-          <div class="flex-1">
-            <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase" id="achv-detail-state">Locked</div>
-            <div class="text-xl font-black mt-1" id="achv-detail-name">—</div>
-            <div class="text-sm opacity-75 mt-2 leading-relaxed" id="achv-detail-desc">—</div>
-          </div>
-        </div>
-
-        <div class="mt-5 grid grid-cols-2 gap-3">
-          <div class="rounded-xl border border-white/10 bg-black/20 p-3">
-            <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">Rarity</div>
-            <div class="text-lg font-black mt-1" id="achv-detail-rarity">—</div>
-            <div class="text-[10px] font-mono opacity-40 mt-1" id="achv-detail-rarity-sub">—</div>
-          </div>
-          <div class="rounded-xl border border-white/10 bg-black/20 p-3">
-            <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">Unlocked At</div>
-            <div class="text-sm font-mono mt-2 opacity-80" id="achv-detail-time">—</div>
-          </div>
-        </div>
-
-        <div class="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
-          <div class="text-[10px] font-mono tracking-widest opacity-50 uppercase">How to unlock</div>
-          <div class="text-sm mt-2 opacity-80 leading-relaxed" id="achv-detail-how">—</div>
-        </div>
-
-      </div>
-    </div>
+    <!-- 닫기 버튼 -->
+    <button id="close-achievements"
+            class="mt-8 w-full border border-white/20 text-white py-4 font-bold uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all">
+      Close
+    </button>
   </div>
-
 </div>
-
-
-            <button id="close-achievements"
-                    class="mt-12 w-full border border-white/20 text-white py-4
-                        font-bold uppercase tracking-widest text-xs
-                        hover:bg-white hover:text-black transition-all">
-                Close
-            </button>
-        </div>
-    </div>
-
-
 
     <div id="result-screen" class="absolute inset-0 z-[200] flex flex-col items-center justify-center hidden bg-[#050510]/95 backdrop-blur-md">
         <h2 class="text-3xl font-black italic mb-2 tracking-tighter text-[var(--vapor-blue)] uppercase">Synchronization Result</h2>
@@ -961,262 +1001,6 @@
       .onfinish = () => div.remove();
   }, 2000);
 }
-
-
-
-    let achvUI = {
-  filter: "all",      // all | unlocked | locked
-  sort: "recent",     // recent | name | rarity | progress
-  search: "",
-  selectedId: null,
-};
-
-function rarityLabel(r) {
-  if (r >= 5) return { t: "LEGENDARY", sub: "Very rare record", color: "rgba(255,0,222,0.9)" };
-  if (r === 4) return { t: "EPIC", sub: "Rare record", color: "rgba(112,0,255,0.9)" };
-  if (r === 3) return { t: "RARE", sub: "Uncommon record", color: "rgba(0,246,255,0.9)" };
-  if (r === 2) return { t: "UNCOMMON", sub: "Above average", color: "rgba(255,255,255,0.75)" };
-  return { t: "COMMON", sub: "Standard record", color: "rgba(255,255,255,0.55)" };
-}
-
-function bindAchievementUIOnce() {
-  const btnAll = document.getElementById("achv-filter-all");
-  const btnU = document.getElementById("achv-filter-unlocked");
-  const btnL = document.getElementById("achv-filter-locked");
-  const sortSel = document.getElementById("achv-sort");
-  const search = document.getElementById("achv-search");
-  const reset = document.getElementById("achv-reset");
-
-  if (!btnAll || btnAll.dataset.bound === "1") return;
-  btnAll.dataset.bound = "1";
-
-  function setActiveFilter(next) {
-    achvUI.filter = next;
-    btnAll.classList.toggle("active", next === "all");
-    btnU.classList.toggle("active", next === "unlocked");
-    btnL.classList.toggle("active", next === "locked");
-    renderAchievements();
-  }
-
-  btnAll.onclick = () => setActiveFilter("all");
-  btnU.onclick = () => setActiveFilter("unlocked");
-  btnL.onclick = () => setActiveFilter("locked");
-
-  sortSel.onchange = () => { achvUI.sort = sortSel.value; renderAchievements(); };
-  search.oninput = () => { achvUI.search = search.value.trim().toLowerCase(); renderAchievements(); };
-
-  reset.onclick = () => {
-    achvUI.filter = "all";
-    achvUI.sort = "recent";
-    achvUI.search = "";
-    achvUI.selectedId = null;
-
-    btnAll.classList.add("active");
-    btnU.classList.remove("active");
-    btnL.classList.remove("active");
-
-    sortSel.value = "recent";
-    search.value = "";
-    renderAchievements();
-  };
-}
-
-function setAchievementDetail(a) {
-  const empty = document.getElementById("achv-detail-empty");
-  const box = document.getElementById("achv-detail");
-  const iconEl = document.getElementById("achv-detail-icon");
-  const stateEl = document.getElementById("achv-detail-state");
-  const nameEl = document.getElementById("achv-detail-name");
-  const descEl = document.getElementById("achv-detail-desc");
-  const rarityEl = document.getElementById("achv-detail-rarity");
-  const raritySubEl = document.getElementById("achv-detail-rarity-sub");
-  const timeEl = document.getElementById("achv-detail-time");
-  const howEl = document.getElementById("achv-detail-how");
-
-  if (!a) {
-    empty.classList.remove("hidden");
-    box.classList.add("hidden");
-    return;
-  }
-
-  const ud = unlocked[a.id];
-  const isUnlocked = !!ud;
-
-  const rr = rarityLabel(a.rarity || 1);
-
-  empty.classList.add("hidden");
-  box.classList.remove("hidden");
-
-  iconEl.textContent = a.icon || "🏆";
-  stateEl.textContent = isUnlocked ? "Unlocked" : "Locked";
-  stateEl.style.color = isUnlocked ? "var(--vapor-blue)" : "rgba(255,255,255,0.6)";
-
-  nameEl.textContent = a.name;
-  descEl.textContent = a.desc;
-
-  rarityEl.textContent = rr.t;
-  rarityEl.style.color = rr.color;
-  raritySubEl.textContent = rr.sub;
-
-  timeEl.textContent = isUnlocked ? new Date(ud.t).toLocaleString() : "—";
-  howEl.textContent = a.how || "Play more protocols to discover the requirement.";
-}
-
-function renderAchievements() {
-  bindAchievementUIOnce();
-
-  const listEl = document.getElementById("achievement-list");
-  const totalEl = document.getElementById("achv-total-count");
-  const unlockedEl = document.getElementById("achv-unlocked-count");
-  const percentEl = document.getElementById("achv-percent");
-  const barEl = document.getElementById("achv-progress-bar");
-
-  if (!listEl) return;
-
-  const total = ACHIEVEMENTS.length;
-  const unlockedCount = ACHIEVEMENTS.reduce((acc, a) => acc + (unlocked[a.id] ? 1 : 0), 0);
-  const pct = total > 0 ? (unlockedCount / total * 100) : 0;
-
-  totalEl.textContent = String(total);
-  unlockedEl.textContent = String(unlockedCount);
-  percentEl.textContent = pct.toFixed(0) + "%";
-  barEl.style.width = Math.max(0, Math.min(100, pct)) + "%";
-
-  // 1) 필터 + 검색
-  let items = ACHIEVEMENTS.slice();
-
-  if (achvUI.filter === "unlocked") items = items.filter(a => !!unlocked[a.id]);
-  if (achvUI.filter === "locked") items = items.filter(a => !unlocked[a.id]);
-
-  if (achvUI.search) {
-    const q = achvUI.search;
-    items = items.filter(a =>
-      (a.name || "").toLowerCase().includes(q) ||
-      (a.desc || "").toLowerCase().includes(q) ||
-      (a.how || "").toLowerCase().includes(q)
-    );
-  }
-
-  // 2) 정렬
-  items.sort((a, b) => {
-    const au = unlocked[a.id];
-    const bu = unlocked[b.id];
-
-    if (achvUI.sort === "recent") {
-      // unlocked 최신 우선, locked는 뒤로
-      const at = au ? au.t : -1;
-      const bt = bu ? bu.t : -1;
-      return bt - at;
-    }
-
-    if (achvUI.sort === "name") {
-      return (a.name || "").localeCompare((b.name || ""));
-    }
-
-    if (achvUI.sort === "rarity") {
-      return (b.rarity || 1) - (a.rarity || 1);
-    }
-
-    if (achvUI.sort === "progress") {
-      // unlocked 우선
-      return (bu ? 1 : 0) - (au ? 1 : 0);
-    }
-
-    return 0;
-  });
-
-  // 3) 선택 유효성
-  if (achvUI.selectedId && !ACHIEVEMENTS.find(x => x.id === achvUI.selectedId)) {
-    achvUI.selectedId = null;
-  }
-
-  // 4) 렌더
-  listEl.innerHTML = "";
-
-  if (items.length === 0) {
-    listEl.innerHTML = `
-      <div class="p-6 text-sm opacity-60">
-        No achievements matched your filters.
-      </div>
-    `;
-    setAchievementDetail(null);
-    return;
-  }
-
-  items.forEach(a => {
-    const ud = unlocked[a.id];
-    const isUnlocked = !!ud;
-
-    const rr = rarityLabel(a.rarity || 1);
-
-    const row = document.createElement("div");
-    row.className = `achv-row ${isUnlocked ? "" : "achv-locked"} ${achvUI.selectedId === a.id ? "selected" : ""}`;
-
-    row.innerHTML = `
-      <div class="achv-icon" style="${isUnlocked ? "" : "filter: grayscale(0.2);"}">
-        ${a.icon || "🏆"}
-      </div>
-
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <div class="font-black truncate">${a.name}</div>
-          <span class="achv-pill" style="border-color:${rr.color}; color:${rr.color};">
-            ${rr.t}
-          </span>
-        </div>
-
-        <div class="text-sm opacity-70 mt-1 leading-relaxed">
-          ${a.desc}
-        </div>
-
-        <div class="mt-2 flex items-center gap-3">
-          <span class="achv-badge" style="border-color:${isUnlocked ? "rgba(0,246,255,0.35)" : "rgba(255,255,255,0.12)"}; color:${isUnlocked ? "rgba(0,246,255,0.95)" : "rgba(255,255,255,0.65)"};">
-            ${isUnlocked ? "UNLOCKED" : "LOCKED"}
-          </span>
-
-          <span class="achv-mini">
-            ${isUnlocked ? ("Unlocked: " + new Date(ud.t).toLocaleString()) : "Requirement: " + (a.how || "Hidden")}
-          </span>
-        </div>
-      </div>
-    `;
-
-    row.onclick = () => {
-      achvUI.selectedId = a.id;
-      setAchievementDetail(a);
-      renderAchievements();
-    };
-
-    listEl.appendChild(row);
-  });
-
-  // 5) 상세 패널 초기 선택
-  if (!achvUI.selectedId) {
-    // 기본: 첫 항목 선택
-    const first = items[0];
-    achvUI.selectedId = first.id;
-    setAchievementDetail(first);
-    // 재렌더는 굳이 안 돌려도 되지만, selected 표시 맞추려면 한 번
-    renderAchievements();
-    return;
-  } else {
-    const sel = ACHIEVEMENTS.find(x => x.id === achvUI.selectedId);
-    setAchievementDetail(sel);
-  }
-}
-
-
-
-    // endGame에서 호출
-    function checkAchievementsOnEnd(finalRank, accVal) {
-    // endless는 기본적으로 랭크 개념이 약하니 생존 업적 중심
-    if (gameMode === "single") {
-        // PARADOX 0회 업적: 현재 코드에는 paradox 카운트가 없으므로 아래 3-3에서 카운터 추가 필요
-        if (stats.paradox === 0) unlockAchievement("PARADOX_FREE");
-
-        if (stats.miss === 0) unlockAchievement("PERFECT_RECALL");
-        if (finalRank === "SSS") unlockAchievement("SSS_SYNC");
-    }
     }
 
     let stats = { miss: 0, paradox: 0 };
@@ -1863,5 +1647,29 @@ if (gameMode === "single") unlockAchievement("FIRST_SYNC");
         };
         window.onresize();
     </script>
-    </body>
+          <!-- 업적 모듈 로드 -->
+  <script src="achievements.js"></script>
+
+  <script>
+    // 업적 모달 열기/닫기
+    const openAchievementBtn = document.getElementById('open-achievements');
+    const closeAchievementBtn = document.getElementById('close-achievements');
+    const achievementModal = document.getElementById('achievement-modal');
+
+    openAchievementBtn.onclick = () => {
+      initializeAchievements();
+      renderAchievements();
+      achievementModal.classList.remove('hidden');
+    };
+
+    closeAchievementBtn.onclick = () => {
+      achievementModal.classList.add('hidden');
+    };
+
+    // 페이지 로드 시 업적 초기화
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeAchievements();
+    });
+  </script>
+</body>
     </html>
