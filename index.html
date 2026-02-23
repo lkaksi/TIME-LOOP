@@ -1486,6 +1486,12 @@ function renderAchievements() {
     });
   };
 
+  const decodeFromBytes = async (raw) => {
+    if (!raw) return null;
+    const arrayBuffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+    return await decodeAudioDataSafe(arrayBuffer);
+  };
+
   const decodeFromUrl = async (url) => {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to load audio: ${url}`);
@@ -1495,15 +1501,20 @@ function renderAchievements() {
 
   if (selectedSong.isTutorial) {
     const tutorialAudioPath = selectedSong.audioPath || 'songs/no-copyright.mp3';
-    audioBuffer = await decodeFromUrl(tutorialAudioPath);
+
+    const bundledBytes = window.songAPI?.readBundledSongAsArrayBuffer?.(tutorialAudioPath);
+    if (bundledBytes) {
+      audioBuffer = await decodeFromBytes(bundledBytes);
+    } else {
+      audioBuffer = await decodeFromUrl(tutorialAudioPath);
+    }
   } else {
     if (selectedSong.filePath && window.songAPI?.readSongFileAsArrayBuffer) {
       const raw = window.songAPI.readSongFileAsArrayBuffer(selectedSong.filePath);
       if (!raw) throw new Error(`Failed to read local file: ${selectedSong.filePath}`);
-      const arrayBuffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
-      audioBuffer = await decodeAudioDataSafe(arrayBuffer);
+      audioBuffer = await decodeFromBytes(raw);
     } else if (selectedSong.filePath) {
-      const fileName = selectedSong.filePath.split(/[\\/]/).pop();
+      const fileName = selectedSong.filePath.split(/[\/]/).pop();
       audioBuffer = await decodeFromUrl(`songs/${fileName}`);
     } else if (selectedSong.file) {
       const arrayBuffer = await selectedSong.file.arrayBuffer();
