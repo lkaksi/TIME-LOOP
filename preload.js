@@ -9,7 +9,9 @@ const runtimeRoots = [
   process.resourcesPath,
   path.dirname(process.execPath),
   path.join(process.resourcesPath || '', 'app.asar'),
-  path.join(process.resourcesPath || '', 'app')
+  path.join(process.resourcesPath || '', 'app.asar.unpacked'),
+  path.join(process.resourcesPath || '', 'app'),
+  path.join(process.resourcesPath || '', 'resources')
 ].filter(Boolean);
 
 function readFileBytes(filePath) {
