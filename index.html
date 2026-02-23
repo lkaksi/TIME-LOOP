@@ -1502,8 +1502,9 @@ function renderAchievements() {
   if (selectedSong.isTutorial) {
     const tutorialAudioPath = selectedSong.audioPath || 'songs/no-copyright.mp3';
 
-    const bundledBytes = window.songAPI?.readBundledSongAsArrayBuffer?.(tutorialAudioPath);
-    if (bundledBytes) {
+    if (window.songAPI?.readBundledSongAsArrayBuffer) {
+      const bundledBytes = window.songAPI.readBundledSongAsArrayBuffer(tutorialAudioPath);
+      if (!bundledBytes) throw new Error(`Bundled song missing: ${tutorialAudioPath}`);
       audioBuffer = await decodeFromBytes(bundledBytes);
     } else {
       audioBuffer = await decodeFromUrl(tutorialAudioPath);
@@ -1514,7 +1515,7 @@ function renderAchievements() {
       if (!raw) throw new Error(`Failed to read local file: ${selectedSong.filePath}`);
       audioBuffer = await decodeFromBytes(raw);
     } else if (selectedSong.filePath) {
-      const fileName = selectedSong.filePath.split(/[\/]/).pop();
+      const fileName = selectedSong.filePath.split(/[\\/]/).pop();
       audioBuffer = await decodeFromUrl(`songs/${fileName}`);
     } else if (selectedSong.file) {
       const arrayBuffer = await selectedSong.file.arrayBuffer();

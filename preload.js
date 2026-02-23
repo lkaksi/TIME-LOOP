@@ -3,14 +3,20 @@ const { contextBridge } = require("electron");
 const fs = require("fs");
 const path = require("path");
 
+const runtimeRoots = [
+  process.cwd(),
+  __dirname,
+  process.resourcesPath,
+  path.dirname(process.execPath),
+  path.join(process.resourcesPath || '', 'app.asar'),
+  path.join(process.resourcesPath || '', 'app')
+].filter(Boolean);
+
 function readFileBytes(filePath) {
   if (!filePath) return null;
 
-  const candidates = [
-    filePath,
-    path.join(process.cwd(), filePath),
-    path.join(__dirname, filePath)
-  ];
+  const normalized = String(filePath).replace(/^[.][\\/]/, '');
+  const candidates = [filePath, normalized, ...runtimeRoots.map(root => path.join(root, normalized))];
 
   const resolved = candidates.find(p => fs.existsSync(p));
   if (!resolved) return null;
