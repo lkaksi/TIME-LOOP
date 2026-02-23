@@ -1,0 +1,16 @@
+{
+  "name": "teeny-army-interpret-fphir",
+  "productName": "teeny-army-interpret-fphir",
+  "description": "My Electron application description",
+  "keywords": [],
+  "main": "./main.js",
+  "version": "1.0.0",
+  "author": "정형균(CB2영업국영업1팀)",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "39.0.0"
+  }
+}
