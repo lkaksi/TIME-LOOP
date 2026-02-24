@@ -239,12 +239,438 @@
     .rank-slam  { animation: slam 0.65s cubic-bezier(0.175,0.885,0.32,1.275) both; }
     .screen-shake { animation: shake 0.22s ease-in-out 1; }
 
+ .screen {
+    position:absolute;
+    width:100%;
+    height:100%;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    background: radial-gradient(circle at center, #111 0%, #000 80%);
+    backdrop-filter: blur(6px);     /* 🔥 뒤 화면 살짝 보이게 */
+    background: rgba(0,0,0,0.65);
+    z-index: 1000;  
+  }
+
+  .screen.active {
+    display:flex;
+    animation: fadeIn 1s ease forwards;
+    pointer-events: auto;
+  }
+
+  .screen:not(.active) {
+  pointer-events: none;       /* 🔥 추가 */
+  } 
+
+  @keyframes fadeIn {
+    from {opacity:0;}
+    to {opacity:1;}
+  }
+
+  .click-text {
+    font-size:2rem;
+    letter-spacing:4px;
+    color:#fff;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% {opacity:0.3;}
+    50% {opacity:1;}
+    100% {opacity:0.3;}
+  }
+
+  .title {
+    font-size:4rem;
+    color:#0ff;
+    text-shadow:0 0 10px #0ff, 0 0 30px #0ff;
+    margin-bottom:40px;
+  }
+
+  .menu-buttons button {
+    margin:10px;
+    padding:15px 40px;
+    font-size:1.2rem;
+    background:transparent;
+    border:2px solid #0ff;
+    color:#0ff;
+    cursor:pointer;
+    transition:0.3s;
+  }
+
+  .menu-buttons button:hover {
+    background:#0ff;
+    color:#000;
+    box-shadow:0 0 20px #0ff;
+  }
+
+#click-screen {
+  background: radial-gradient(circle at center, #ff00cc 0%, #0a0014 70%);
+  overflow: hidden;
+}
+
+#click-screen::before {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255,0,255,0.05),
+    rgba(255,0,255,0.05) 2px,
+    transparent 2px,
+    transparent 6px
+  );
+  animation: moveBg 10s linear infinite;
+}
+
+@keyframes moveBg {
+  from { transform: translate(-10%, -10%); }
+  to   { transform: translate(10%, 10%); }
+}
+
+.click-text {
+  font-size: 2.5rem;
+  letter-spacing: 6px;
+  color: #fff;
+  text-shadow:
+    0 0 10px #ff00ff,
+    0 0 30px #ff00ff,
+    0 0 60px #ff00ff;
+  animation: glitch 1.5s infinite;
+}
+
+@keyframes glitch {
+  0% { transform: skew(0deg); }
+  20% { transform: skew(2deg); }
+  40% { transform: skew(-2deg); }
+  60% { transform: skew(1deg); }
+  80% { transform: skew(-1deg); }
+  100% { transform: skew(0deg); }
+}
+
+#start-screen {
+      display: flex;
+    }
+
+    /* ===== TIME LOOP 배경 ===== */
+
+#main-menu {
+  background: radial-gradient(circle at center, #0a0f1f, #000);
+  overflow: hidden;
+}
+
+/* 시간 파동 */
+.time-waves {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: repeating-radial-gradient(
+    circle,
+    rgba(0,255,255,0.08),
+    rgba(0,255,255,0.08) 2px,
+    transparent 2px,
+    transparent 40px
+  );
+  animation: rotateTime 30s linear infinite;
+}
+
+@keyframes rotateTime {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 그리드 왜곡 */
+.time-grid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ===== 타이틀 ===== */
+
+.time-title {
+  position: absolute;
+  top: 120px;
+  font-size: 70px;
+  color: #b6f7ff;
+  text-shadow:
+    0 0 10px #00f0ff,
+    0 0 40px #00f0ff,
+    0 0 80px #0088ff;
+  animation: glitchTitle 3s infinite;
+}
+
+@keyframes glitchTitle {
+  0% { transform: skew(0deg); }
+  20% { transform: skew(1deg); }
+  40% { transform: skew(-1deg); }
+  60% { transform: translateX(2px); }
+  80% { transform: translateX(-2px); }
+  100% { transform: skew(0deg); }
+}
+
+/* ===== 메뉴 ===== */
+
+.loop-menu {
+  position: absolute;
+  left: 100px;
+  top: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.loop-menu button {
+  background: none;
+  border: none;
+  color: #8efaff;
+  font-size: 26px;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.3s;
+}
+
+.loop-menu button:hover {
+  transform: translateX(15px);
+  color: #fff;
+  text-shadow: 0 0 15px #00f0ff;
+}
+
+/* ===== 로고 ===== */
+
+.logo-wrap {
+  position: absolute;
+  top: 90px;
+  text-align: center;
+}
+
+.time-logo {
+  font-size: 72px;
+  font-weight: 800;
+  letter-spacing: 6px;
+
+  background: linear-gradient(90deg, #00f0ff, #9d4dff, #00f0ff);
+  background-size: 200% auto;
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  animation: logoFlow 6s linear infinite;
+  text-shadow:
+    0 0 20px rgba(0,240,255,0.7),
+    0 0 60px rgba(157,77,255,0.6);
+}
+
+@keyframes logoFlow {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+.logo-sub {
+  margin-top: 10px;
+  font-size: 16px;
+  letter-spacing: 4px;
+  color: rgba(255,255,255,0.6);
+}
+
+.main-modes {
+  position: absolute;
+  left: 120px;
+  top: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.main-modes button {
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: #8efaff;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.main-modes button:hover {
+  transform: translateX(15px);
+  color: #ffffff;
+  text-shadow: 0 0 20px #00f0ff;
+}
+
+.bottom-menu {
+  position: absolute;
+  bottom: 60px;
+  left: 120px;
+  display: flex;
+  gap: 30px;
+}
+
+.bottom-menu button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.bottom-menu button:hover {
+  color: #00f0ff;
+}
+
+#main-menu {
+  background: #050510;
+  overflow: hidden;
+}
+
+/* 중앙 코어 폭발 효과 */
+.loop-core {
+  position: absolute;
+  width: 1200px;
+  height: 1200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(0,255,255,0.9) 0%,
+    rgba(157,77,255,0.6) 20%,
+    rgba(0,0,0,0) 60%);
+  filter: blur(40px);
+  animation: pulseCore 4s infinite ease-in-out;
+}
+
+@keyframes pulseCore {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* 파티클 선 효과 */
+.loop-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle, #00f0ff 2px, transparent 2px),
+    radial-gradient(circle, #ff00cc 2px, transparent 2px);
+  background-size: 120px 120px;
+  opacity: 0.15;
+  animation: moveParticles 30s linear infinite;
+}
+
+@keyframes moveParticles {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.hero-logo {
+  position: absolute;
+  top: 160px;
+  width: 100%;
+  text-align: center;
+}
+
+.hero-logo h1 {
+  font-size: 90px;
+  font-weight: 900;
+  letter-spacing: 4px;
+
+  background: linear-gradient(90deg, #ffffff, #ff00cc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 20px rgba(255,0,200,0.8),
+    0 0 60px rgba(0,255,255,0.8);
+}
+
+.hero-logo .sub {
+  margin-top: 15px;
+  font-size: 22px;
+  letter-spacing: 6px;
+  color: rgba(0,255,255,0.8);
+}
+
+.menu-left {
+  position: absolute;
+  left: 140px;
+  top: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.menu-left button {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #8efaff;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.3s;
+}
+
+.menu-left button:hover {
+  transform: translateX(20px);
+  color: #ffffff;
+  text-shadow: 0 0 20px #ff00cc;
+}
+
+.menu-bottom {
+  position: absolute;
+  bottom: 70px;
+  left: 140px;
+  display: flex;
+  gap: 40px;
+}
+
+.menu-bottom button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.menu-bottom button:hover {
+  color: #00f0ff;
+}
+
+
+
         </style>
     </head>
-    <body>
+     <!-- 1️⃣ Click Screen -->
 
-    <div class="crt-overlay"></div>
+  <!-- 2️⃣ Main Menu -->
+  <div id="main-menu" class="screen active">
 
+  <div class="loop-background">
+    <div class="loop-core"></div>
+    <div class="loop-particles"></div>
+  </div>
+
+  <div class="hero-logo">
+    <h1>TIME-LOOP</h1>
+    <div class="sub">PRO RHYTHM SYSTEM</div>
+  </div>
+
+  <div class="menu-left">
+    <button onclick="enterStory()">STORY MODE</button>
+    <button onclick="enterBasic()">BASIC MODE</button>
+    <button onclick="enterCustom()">CUSTOM MODE</button>
+  </div>
+
+
+</div>
 
     <div id="start-screen" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-[#050510]">
         <div class="absolute top-10 right-10 flex gap-4">
@@ -1850,7 +2276,9 @@ if (gameMode === "single") unlockAchievement("FIRST_SYNC");
                 audioSource.start(0);
                 startTime = audioCtx.currentTime;
                 isPlaying = true;
-                animate();
+                canvas.classList.remove("hidden");
+                requestAnimationFrame(animate);
+                
             } catch (e) {
                 console.error(e);
                 alert("Protocol Error: " + e.message);
@@ -1862,6 +2290,115 @@ if (gameMode === "single") unlockAchievement("FIRST_SYNC");
             canvas.height = window.innerHeight;
         };
         window.onresize();
+
+         const clickScreen = document.getElementById("click-screen");
+  const mainMenu = document.getElementById("main-menu");
+  const startScreen = document.getElementById("start-screen");
+  const storyMenu = document.getElementById("story-menu");
+
+  clickScreen.addEventListener("click", () => {
+    clickScreen.classList.remove("active");
+    clickScreen.style.display = "none";
+    mainMenu.classList.add("active");
+  });
+
+  function enterBasic() {
+  mainMenu.classList.remove("active");
+  mainMenu.style.display = "none";
+
+  startScreen.style.opacity = "1";
+  startScreen.style.pointerEvents = "auto";
+}
+
+  function enterStory() {
+    mainMenu.classList.remove("active");
+    storyMenu.classList.add("active");
+    renderStory();
+  }
+
+function startGame(mode) {
+  gameMode = mode === "custom" ? "single" : mode;
+  playBtn.click();
+}
+  function enterCustom() {
+  mainMenu.classList.remove("active");
+  mainMenu.style.display = "none";
+
+  // 🔥 여기 기존 커스텀 실행 함수 넣기
+  startGame("custom");  
+}
+  function backToMenu() {
+    storyMenu.classList.remove("active");
+    mainMenu.classList.add("active");
+  }
+
+  const storyData = [
+    { id:1, name:"Chapter 1 - Awakening", unlocked:true },
+    { id:2, name:"Chapter 2 - Distortion", unlocked:false },
+    { id:3, name:"Chapter 3 - Collapse", unlocked:false }
+  ];
+
+  function renderStory() {
+    const container = document.getElementById("story-chapters");
+    container.innerHTML = "";
+
+    storyData.forEach(ch => {
+      const btn = document.createElement("button");
+      btn.textContent = ch.name;
+      btn.disabled = !ch.unlocked;
+
+      btn.onclick = () => {
+        startGame("single"); // 기존 함수 그대로 호출
+      };
+
+      container.appendChild(btn);
+    });
+  }
+
+  startScreen.style.opacity = "0.2";
+startScreen.style.pointerEvents = "none";
+
+function openSettings() {
+  // 기존 설정 열기 함수로 연결
+  alert("설정 화면 연결 필요");
+}
+
+function openHelp() {
+  alert("도움말 연결 필요");
+}
+
+function openAchievements() {
+  // 기존 업적 화면 함수 있으면 그걸 호출
+  showAchievements();
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    goToStartMenu();
+  }
+});
+
+function stopGame() {
+  isPlaying = false;
+  if (audioSource) audioSource.stop();
+}
+
+function goToStartMenu() {
+
+  // 모든 screen 숨기기
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
+
+  // 시작화면 보이기
+  document.getElementById("main-menu").classList.add("active");
+
+  // 🔥 게임 중이었으면 정지 처리 (필요하면 사용)
+  if (typeof stopGame === "function") {
+    stopGame();
+  }
+
+}
     </script>
     </body>
     </html>
